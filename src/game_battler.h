@@ -930,7 +930,22 @@ public:
 	/** Lock the direction of battler */
 	void SetLockDirection(bool b);
 
+
+	/** @return the death animation timer */
+	int GetDeathTimer() const;
+
+	/**
+	 * Set the death animation timer
+	 *
+	 * @param t the value to set.
+	 */
+	void SetDeathTimer(int t = 36);
+
+
 protected:
+
+	int death_timer = 0;
+
 	/** Gauge for RPG2k3 Battle */
 	int gauge = 0;
 
@@ -1174,5 +1189,13 @@ inline bool Game_Battler::IsSpriteDirectionFlipped() const {
 		default:
 			return IsDirectionFlipped();
 	}
+}
+
+inline int Game_Battler::GetDeathTimer() const {
+	return death_timer;
+}
+
+inline void Game_Battler::SetDeathTimer(int t) {
+	death_timer = t;
 }
 #endif
