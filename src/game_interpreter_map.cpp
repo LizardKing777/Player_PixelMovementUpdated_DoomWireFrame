@@ -717,6 +717,10 @@ bool Game_Interpreter_Map::CommandSetCustomBattleHUD(lcf::rpg::EventCommand cons
 	CustomBattle::used = true;
 
 	std::string s = com.string.c_str();
+	if (com.parameters[1] == 1)
+	{
+		s = ToString(CommandStringOrVariable(com, 1, 2));
+	}
 	char delim = '\n';
 
 	std::vector<std::string> lines;
@@ -931,6 +935,10 @@ bool Game_Interpreter_Map::CommandSetCustomItem(lcf::rpg::EventCommand const& co
 	CustomBattle::used = true;
 
 	std::string s = com.string.c_str();
+	if (com.parameters[1] == 1)
+	{
+		s = ToString(CommandStringOrVariable(com, 1, 2));
+	}
 	char delim = '\n';
 
 	std::vector<std::string> lines;
@@ -1120,6 +1128,11 @@ bool Game_Interpreter_Map::CommandSetCustomMenu(lcf::rpg::EventCommand const& co
 	CustomMenu::used = true;
 
 	std::string s = com.string.c_str();
+
+	if (com.parameters[1] == 1)
+	{
+		s = ToString(CommandStringOrVariable(com,1,2));
+	}
 	char delim = '\n';
 
 	std::vector<std::string> lines;
