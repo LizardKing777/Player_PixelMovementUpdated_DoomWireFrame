@@ -354,6 +354,8 @@ void Game_Windows::Window_User::Refresh(bool& async_wait) {
 	window->CreateContents();
 	window->SetVisible(false);
 
+	window->SetActive(false);
+
 	BitmapRef system;
 	if (!data.system_name.empty()) {
 		system = Cache::System(data.system_name);
