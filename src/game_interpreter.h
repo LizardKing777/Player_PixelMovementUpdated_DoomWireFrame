@@ -292,13 +292,14 @@ protected:
 	bool SetBattlerPosition(lcf::rpg::EventCommand const& com);
 	bool CommandSetCustomIsSkillUsable(lcf::rpg::EventCommand const& com);
 	bool CommandGetSkillMPCost(lcf::rpg::EventCommand const& com);
-
+	bool CommandForceSelectingActor(lcf::rpg::EventCommand const& com);
+	bool CommandShowStringPicSelectable(lcf::rpg::EventCommand const& com);
+	bool CommandManiacControlMessage(lcf::rpg::EventCommand const& com);
+	
 	void tokenize(std::string const& str, const char delim, std::vector<std::string>& out);
 	void tokenizeRegex(std::string const& str, const char delim, std::vector<std::string>& out);
 
-	bool CommandForceSelectingActor(lcf::rpg::EventCommand const& com);
 
-	bool CommandShowStringPicSelectable(lcf::rpg::EventCommand const& com);
 
 	int DecodeInt(lcf::DBArray<int32_t>::const_iterator& it);
 	const std::string DecodeString(lcf::DBArray<int32_t>::const_iterator& it);

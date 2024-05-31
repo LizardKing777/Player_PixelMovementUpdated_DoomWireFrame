@@ -32,7 +32,9 @@ class AsyncOp;
 
 namespace Game_Message {
 
-	static const int MAX_LINE = 4;
+	static const int MAX_LINE = 9;
+
+	int GetMaxLine();
 
 	/** Set the window used to display the text */
 	void SetWindow(Window_Message* window);

@@ -184,8 +184,9 @@ void Window_Message::StartMessageProcessing(PendingMessage pm) {
 		text.push_back('\f');
 	}
 
-	item_max = min(4, pending_message.GetNumChoices());
-	startCursorY = pending_message.GetChoiceStartLine();
+	item_max = min(Game_Message::GetMaxLine(), pending_message.GetNumChoices());
+	if (pending_message.GetChoiceCancelType() > 0)
+		item_max--;
 
 	text_index = text.data();
 
@@ -273,10 +274,19 @@ void Window_Message::InsertNewPage() {
 		y = Player::menu_offset_y;
 	}
 	else if (Game_Message::GetRealPosition() == 1) {
-		y = static_cast<int>((Player::screen_height - MESSAGE_BOX_HEIGHT) / 2.f);
+		y = static_cast<int>((Player::screen_height - GetWidth()) / 2.f);
 	}
 	else if (Game_Message::GetRealPosition() == 2) {
-		y = Player::screen_height - Player::menu_offset_y - MESSAGE_BOX_HEIGHT ;
+		y = Player::screen_height - Player::menu_offset_y - GetHeight() ;
+	}
+	else if (Game_Message::GetRealPosition() == -1) {
+		int varID = Main_Data::game_system->systemVarID[2];
+		x = Main_Data::game_variables->Get(varID + 1);
+		y = Main_Data::game_variables->Get(varID + 2);
+	}
+	// Set X pos
+	if (Game_Message::GetRealPosition() != -1) {
+		x = Player::screen_width / 2 - GetWidth() / 2;
 	}
 
 	if (Main_Data::game_system->IsMessageTransparent()) {
@@ -984,6 +994,8 @@ void Window_Message::InputChoice() {
 
 		Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
 		choice_result = index;
+		if (choice_result >= 4)
+			choice_result++;
 	}
 
 	if (choice_result >= 0) {
