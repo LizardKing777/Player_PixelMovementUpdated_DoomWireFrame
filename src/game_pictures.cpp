@@ -334,6 +334,9 @@ void Game_Pictures::Picture::Erase() {
 		data.easyrpg_type = lcf::rpg::SavePicture::EasyRpgType_default;
 		Main_Data::game_windows->Erase(data.ID);
 	}
+	if (pic3D) {
+		pic3D = nullptr;
+	}
 }
 
 void Game_Pictures::Erase(int id) {
@@ -595,6 +598,11 @@ void Game_Pictures::Picture::Update(bool is_battle) {
 			}
 		}
 	}
+
+	if (pic3D != nullptr) {
+		pic3D->Update();
+		sprite->SetBitmap(pic3D->sprite);
+	}
 }
 
 void Game_Pictures::Update(bool is_battle) {
@@ -652,4 +660,18 @@ void Game_Pictures::Picture::SetNonEffectParams(const Params& params, bool set_p
 
 int Game_Pictures::Picture::NumSpriteSheetFrames() const {
 	return data.spritesheet_cols * data.spritesheet_rows;
+}
+
+void Game_Pictures::Show3D(std::string n, int picID, int zoom, int dx, int dy, int rx, int ry, int rz) {
+	auto& pic = GetPicture(picID);
+	pic.Show3D(n, zoom, dx, dy, rx, ry, rz);
+}
+
+void Game_Pictures::Picture::Show3D(std::string n, int zoom, int dx, int dy, int rx, int ry, int rz) {
+	pic3D = new Spriteset_MapDoom(n, zoom, dx, dy, rx, ry, rz);
+
+	if (!sprite) {
+		CreateSprite();
+		needs_update = true;
+	}
 }

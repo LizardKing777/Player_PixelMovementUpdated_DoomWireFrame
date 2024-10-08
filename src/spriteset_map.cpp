@@ -35,6 +35,11 @@ Spriteset_Map::Spriteset_Map() {
 	panorama = std::make_unique<Plane>();
 	panorama->SetZ(Priority_Background);
 
+	doom_lower = std::make_unique<Plane>();
+	doom_upper = std::make_unique<Plane>();
+	doom_lower->SetZ(Priority_Background);
+	doom_upper->SetZ(Priority_BattleAnimation);
+
 	timer1 = std::make_unique<Sprite_Timer>(0);
 	timer2 = std::make_unique<Sprite_Timer>(1);
 
@@ -43,6 +48,8 @@ Spriteset_Map::Spriteset_Map() {
 	if (Player::IsRPG2k3()) {
 		frame = std::make_unique<Frame>();
 	}
+
+	//doom = new Spriteset_MapDoom();
 
 	ParallaxUpdated();
 
@@ -115,6 +122,15 @@ void Spriteset_Map::Update() {
 	}
 
 	DynRpg::Update();
+
+
+	//doomUpdate();
+}
+
+void Spriteset_Map::doomUpdate() {
+	doom->Update();
+	doom_lower->SetBitmap(doom->sprite);
+	doom_upper->SetBitmap(doom->spriteUpper);
 }
 
 void Spriteset_Map::ChipsetUpdated() {

@@ -826,6 +826,8 @@ bool Game_Interpreter::ExecuteCommand(lcf::rpg::EventCommand const& com) {
 			return CommandManiacControlStrings(com);
 		case Cmd::Maniac_CallCommand:
 			return CommandManiacCallCommand(com);
+		case 3029:
+			return CommandManiacControlMessage(com);
 		default:
 			return true;
 	}
@@ -5160,4 +5162,21 @@ int Game_Interpreter::ManiacBitmask(int value, int mask) const {
 	}
 
 	return value;
+}
+
+bool Game_Interpreter::Command3DPicture(lcf::rpg::EventCommand const& com) {
+	
+	std::string name = com.string.c_str();
+
+	int picID = com.parameters[0];
+	int zoom = com.parameters[1];
+	int displayX = com.parameters[2];
+	int displayY = com.parameters[3];
+	int rotX = com.parameters[4];
+	int rotY = com.parameters[5];
+	int rotZ = com.parameters[6];
+
+	Main_Data::game_pictures->Show3D(name, picID, zoom, displayX, displayY, rotX, rotY, rotZ);
+
+	return true;
 }

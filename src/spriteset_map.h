@@ -29,6 +29,7 @@
 #include "sprite_timer.h"
 #include "system.h"
 #include "tilemap.h"
+#include "spritesetmap_doom.h"
 
 class Game_Character;
 class FileRequestAsync;
@@ -46,10 +47,14 @@ public:
 
 	void Update();
 
+	Spriteset_MapDoom* doom;
+
 	/**
 	 * Notifies that the map's chipset has changed.
 	 */
 	void ChipsetUpdated();
+
+	void doomUpdate();
 
 	/**
 	 * Notifies that the map's parallax has changed.
@@ -123,6 +128,9 @@ protected:
 	bool vehicle_loaded[3] = {};
 
 	Tone last_tone;
+
+	std::unique_ptr<Plane> doom_lower;
+	std::unique_ptr<Plane> doom_upper;
 };
 
 inline int Spriteset_Map::GetRenderOx() const {

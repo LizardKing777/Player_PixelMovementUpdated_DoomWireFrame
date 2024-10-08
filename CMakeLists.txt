@@ -347,6 +347,8 @@ add_library(${PROJECT_NAME} OBJECT
 	src/spriteset_battle.h
 	src/spriteset_map.cpp
 	src/spriteset_map.h
+	src/spritesetmap_doom.cpp
+	src/spritesetmap_doom.h
 	src/sprite_timer.cpp
 	src/sprite_timer.h
 	src/state.cpp
