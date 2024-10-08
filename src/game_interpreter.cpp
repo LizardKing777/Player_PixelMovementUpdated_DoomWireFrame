@@ -826,8 +826,6 @@ bool Game_Interpreter::ExecuteCommand(lcf::rpg::EventCommand const& com) {
 			return CommandManiacControlStrings(com);
 		case Cmd::Maniac_CallCommand:
 			return CommandManiacCallCommand(com);
-		case 3029:
-			return CommandManiacControlMessage(com);
 		case 9901:
 			return Command3DPicture(com);
 		default:
