@@ -99,16 +99,46 @@ std::vector<std::string> Spriteset_MapDoom::split(const std::string& s, const st
 }
 
 void Spriteset_MapDoom::Load_OBJ(std::string name) {
+
+	Output::Debug("Load_OBJ");
+
 	points3D = {};
 	connections3D = {};
 
 	surfaces = {};
 
+	Output::Debug(".mtl");
+
 	std::string s = "";
-	std::string ini_file = FileFinder::Game().FindFile("Models/" + name);
+	std::string ini_file = FileFinder::Game().FindFile("Models/" + name + ".mtl");
 	auto ini_stream = FileFinder::Game().OpenInputStream(ini_file, std::ios_base::in);
 
-	Output::Debug("Load_OBJ");
+	std::map<std::string, Color> colors;
+	std::string material_name = "";
+
+	for (std::string line; getline(ini_stream, line); )
+	{
+		// Output::Debug("{}", line);
+		if (line._Starts_with("newmtl ")) {
+			material_name = line.substr(7,line.length() - 7);
+		} else if (line._Starts_with("Kd ")) {
+			std::vector<std::string> v = split(line, " ");
+			int r = std::stof(v[1]) * 255;
+			int g = std::stof(v[2]) * 255;
+			int b = std::stof(v[3]) * 255;
+			colors[material_name] = Color(r, g, b, 255);
+
+			Output::Debug(" {} {} {} {}", material_name, r, g, b);
+		}
+	}
+
+	Output::Debug(".obj");
+
+	std::vector <Point> pointsNoMaterial;
+	s = "";
+	ini_file = FileFinder::Game().FindFile("Models/" + name + ".obj");
+	ini_stream = FileFinder::Game().OpenInputStream(ini_file, std::ios_base::in);
+	Color color;
 
 	for (std::string line; getline(ini_stream, line); )
 	{
@@ -118,14 +148,32 @@ void Spriteset_MapDoom::Load_OBJ(std::string name) {
 			float x = std::stof(v[1]);
 			float y = std::stof(v[2]);
 			float z = std::stof(v[3]);
-			vec3 v3 = { x,y,z };
+
+			Point v3 = { x,y,z, false };
 			points3D.push_back(v3);
+			/*pointsNoMaterial.push_back(v3);*/
+		}
+		// Material
+		else if (line._Starts_with("usemtl ")) {
+			material_name = line.substr(7, line.length() - 7);
+			Output::Debug("{}", material_name);
+			color = colors[material_name];
+
+			Output::Debug(" {} {} {}", color.red, color.green, color.blue);
+
+			//for (auto p : pointsNoMaterial) {
+			//	p.color = color;
+			//	points3D.push_back(p);
+			//}
+			//pointsNoMaterial.clear();
+
 		}
 		// Surface
 		else if (line._Starts_with("f ")) {
 			std::vector<std::string> v = split(line, " ");
 			std::vector<Point> s;
 			Point p;
+			p.color = color;
 			for (int i = 1; i < v.size(); i++) {
 				auto vc = v[i];
 				std::vector<std::string> f = split(vc, "/");
@@ -196,6 +244,12 @@ void Spriteset_MapDoom::Load_OBJ(std::string name) {
 			}
 		}*/
 	}
+
+	//for (auto p : pointsNoMaterial) {
+	//	p.color = color;
+	//	points3D.push_back(p);
+	//}
+	//pointsNoMaterial.clear();
 }
 
 void Spriteset_MapDoom::Update() {
@@ -213,24 +267,26 @@ void Spriteset_MapDoom::Update() {
 		p.y += centeroid.y;
 		p.z += centeroid.z;
 
-		if (timer % refresh_rate == 1 || refresh_rate == 1)
-			pixel(p.x, p.y, p.z);
+		//if (timer % refresh_rate == 1 || refresh_rate == 1)
+			//pixel(p.x, p.y, p.z, p.color);
 	}
 
 	if (timer % refresh_rate == 1 || refresh_rate == 1) {
 
 		for (auto& c : connections3D) {
-			line(points3D[c.a].x, points3D[c.a].y, points3D[c.b].x, points3D[c.b].y, points3D[c.a].z, points3D[c.b].z);
+			// line(points3D[c.a], points3D[c.b]);
 		}
 		for (auto s : surfaces) {
 
 			std::vector<Point> s2;
 			for (auto p : s) {
-				Point p2 = { points3D[p.x].x, points3D[p.x].y, points3D[p.x].z };
+				Point p2 = { points3D[p.x].x, points3D[p.x].y, points3D[p.x].z, points3D[p.x].upper, p.color};
 				s2.push_back(p2);
 
-				p2 = { points3D[p.y].x, points3D[p.y].y, points3D[p.y].z };
+				p2 = { points3D[p.y].x, points3D[p.y].y, points3D[p.y].z, points3D[p.y].upper, p.color };
 				s2.push_back(p2);
+
+				// Output::Debug(" {} {} {}", p2.color.red, p2.color.green , p2.color.blue);
 			}
 			sortPoints(s2);
 			drawPolygon(s2);
@@ -244,9 +300,9 @@ void Spriteset_MapDoom::Update() {
 	points.clear();
 }
 
-void Spriteset_MapDoom::pixel(float x, float y, float z) {
+void Spriteset_MapDoom::pixel(float x, float y, float z, Color c) {
 
-	Point p = { x, y, z, false };
+	Point p = { x, y, z, false, c};
 	if (z < 0) {
 		p.upper = true;
 	}
@@ -254,7 +310,16 @@ void Spriteset_MapDoom::pixel(float x, float y, float z) {
 	points.emplace_back(p);
 }
 
-void Spriteset_MapDoom::line(float x1, float y1, float x2, float y2, float z1, float z2) {
+void Spriteset_MapDoom::line(Point p1, Point p2) {
+
+	float x1, y1, x2, y2, z1, z2;
+	x1 = p1.x;
+	y1 = p1.y;
+	x2 = p2.x;
+	y2 = p2.y;
+	z1 = p1.z;
+	z2 = p2.z;
+
 	float dx = x2 - x1;
 	float dy = y2 - y1;
 	float length = std::sqrt(dx * dx + dy * dy);
@@ -266,7 +331,7 @@ void Spriteset_MapDoom::line(float x1, float y1, float x2, float y2, float z1, f
 		float f = i / length;
 		zz = lerp(z1, z2, f);
 
-		pixel(x1 + std::cosf(angle) * i, y1 + std::sin(angle) * i, zz);
+		pixel(x1 + std::cosf(angle) * i, y1 + std::sin(angle) * i, zz, p1.color);
 	}
 }
 
@@ -294,6 +359,10 @@ void Spriteset_MapDoom::sortPoints(std::vector<Spriteset_MapDoom::Point>& points
 void Spriteset_MapDoom::drawPolygon(std::vector<Spriteset_MapDoom::Point> vertices) {
 
 	if (vertices.size() < 3) return;  // Pas un polygone valide
+
+	Color color = Color(255, 255, 0, 255);
+
+	color = vertices[0].color;
 
 	int z = 0;
 	float z_sum = 0.0;
@@ -339,7 +408,7 @@ void Spriteset_MapDoom::drawPolygon(std::vector<Spriteset_MapDoom::Point> vertic
 			int x_start = intersections[i];
 			int x_end = intersections[i + 1];
 			for (int x = x_start; x <= x_end; ++x) {
-				pixel(x, y, z);  // Dessiner les pixels dans l'intervalle
+				pixel(x, y, z, color);  // Dessiner les pixels dans l'intervalle
 			}
 		}
 	}
@@ -351,7 +420,7 @@ float Spriteset_MapDoom::lerp(float a, float b, float f)
 	return a + f * (b - a);
 }
 
-void Spriteset_MapDoom::rotate(vec3& point, float x, float y, float z) {
+void Spriteset_MapDoom::rotate(Point& point, float x, float y, float z) {
 
 	float rad = 0;
 
@@ -395,7 +464,15 @@ void Spriteset_MapDoom::Show() {
 		r = Rect(p.x + displayX + Player::screen_width / 2 , Player::screen_height - (p.y + displayY + Player::screen_height / 2), 1, 1);
 
 		int mult = ((p.z - zmin) / (zmax - zmin)) * 100;
-		c = Color(255 * mult / 100, 0, 0, 255);
+
+		int red, green, blue;
+		red = p.color.red;
+		green = p.color.green;
+		blue = p.color.blue;
+
+		//Output::Debug(" {} {} {}", red, green, blue);
+
+		c = Color(red * mult / 100, green * mult / 100, blue * mult / 100, 255);
 		//c = p.color;
 		sprite->FillRect(r, c);
 

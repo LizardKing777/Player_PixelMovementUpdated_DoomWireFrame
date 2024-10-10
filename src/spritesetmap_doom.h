@@ -43,9 +43,9 @@ public:
 	BitmapRef sprite;
 	BitmapRef spriteUpper;
 
-	void pixel(float x, float y, float z);
-	void line(float x1, float y1, float x2, float y2, float z1, float z2);
-	void rotate(vec3& point, float x = 1, float y = 1, float z = 1);
+	void pixel(float x, float y, float z, Color c);
+	void line(Point p1, Point p2);
+	void rotate(Point& point, float x = 1, float y = 1, float z = 1);
 
 	Spriteset_MapDoom::Point computeCentroid(const std::vector<Spriteset_MapDoom::Point>& points);
 	void sortPoints(std::vector<Spriteset_MapDoom::Point>& points);
@@ -58,7 +58,7 @@ public:
 	std::vector<std::string> split(const std::string& s, const std::string& delimiter);
 
 	std::vector<Point> points;
-	std::vector <vec3> points3D;
+	std::vector <Point> points3D;
 	std::vector <connection> connections3D;
 
 
