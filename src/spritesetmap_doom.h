@@ -8,16 +8,24 @@
 class Spriteset_MapDoom {
 public:
 
+
 	struct vec3 {
-		float x, y, z;
+		float x, y, z = 0;
 	};
 	struct connection {
 		int a, b;
 	};
 	struct Point {
-		float x, y;
+		float x, y, z;
 		bool upper;
+		Color color;
+
+		bool operator > (const Point& str) const
+		{
+			return (z > str.z);
+		}
 	};
+
 
 	int displayX = 0;
 	int displayY = 0;
@@ -25,12 +33,12 @@ public:
 	int rotationY = 0;
 	int rotationZ = 0;
 
+	int timer = 0;
+
 	Spriteset_MapDoom();
 	Spriteset_MapDoom(std::string n, int zoom, int dx, int dy, int rx, int ry, int rz);
 
 	void Update();
-
-	//Spriteset_Map* spriteset;
 
 	BitmapRef sprite;
 	BitmapRef spriteUpper;
@@ -38,6 +46,11 @@ public:
 	void pixel(float x, float y, float z);
 	void line(float x1, float y1, float x2, float y2, float z1, float z2);
 	void rotate(vec3& point, float x = 1, float y = 1, float z = 1);
+
+	Spriteset_MapDoom::Point computeCentroid(const std::vector<Spriteset_MapDoom::Point>& points);
+	void sortPoints(std::vector<Spriteset_MapDoom::Point>& points);
+	void drawPolygon(std::vector<Point> vertices);
+	bool comparePoints(const Spriteset_MapDoom::Point& p1, const Spriteset_MapDoom::Point& p2);
 
 	float lerp(float a, float b, float f);
 
@@ -47,6 +60,9 @@ public:
 	std::vector<Point> points;
 	std::vector <vec3> points3D;
 	std::vector <connection> connections3D;
+
+
+	std::vector <std::vector<Point>> surfaces;
 
 	vec3 centeroid;
 
