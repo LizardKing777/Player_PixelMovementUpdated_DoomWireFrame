@@ -3,6 +3,9 @@
 #include "bitmap.h"
 #include <filefinder.h>
 #include <player.h>
+#include <cmath>
+#include <main_data.h>
+#include <game_variables.h>
 
 
 Spriteset_MapDoom::Spriteset_MapDoom() {
@@ -62,6 +65,10 @@ Spriteset_MapDoom::Spriteset_MapDoom(std::string n, int zoom, int dx, int dy, in
 	rotationY = ry;
 	rotationZ = rz;
 
+	angleX = 0;
+	angleY = 0;
+	angleZ = 0;
+
 	for (auto& p : points3D) {
 		p.x *= zoom;
 		p.y *= zoom;
@@ -80,6 +87,55 @@ Spriteset_MapDoom::Spriteset_MapDoom(std::string n, int zoom, int dx, int dy, in
 
 	sprite = Bitmap::Create(Player::screen_width, Player::screen_height);
 	spriteUpper = Bitmap::Create(Player::screen_width, Player::screen_height);
+
+	Update(true);
+
+	rotationX = 0;
+	rotationY = 0;
+	rotationZ = 0;
+
+}
+
+void Spriteset_MapDoom::setRotation(int rx, int ry, int rz) {
+	rotationX = rx;
+	rotationY = ry;
+	rotationZ = rz;
+}
+
+void Spriteset_MapDoom::getRotation(int varX, int varY, int varZ) {
+
+	//int x = (int)(angleX * 180 / M_PI / 1000) % 360;
+	//if (x < 0)
+	//	x = 360 + x;
+
+	//int y = (int)(angleY * 180 / M_PI / 1000) % 360;
+	//if (y < 0)
+	//	y = 360 + y;
+
+	//int z = (int)(angleZ * 180 / M_PI / 1000) % 360;
+	//if (z < 0)
+	//	z = 360 + z;
+
+	int x = (int)(angleX * 180 / M_PI) % 360;
+	int y = (int)(angleY * 180 / M_PI) % 360;
+	int z = (int)(angleZ * 180 / M_PI) % 360;
+
+	// S'assurer que les angles sont positifs
+	if (x < 0) x = 360 + x;
+	if (y < 0) y = 360 + y;
+	if (z < 0) z = 360 + z;
+
+
+	auto p = points3D[points3D.size() - 1];
+	x = p.x;
+	y = p.y;
+	z = p.z;
+
+	Main_Data::game_variables->Set(varX, x);
+	Main_Data::game_variables->Set(varY, y);
+	Main_Data::game_variables->Set(varZ, z);
+
+	//Output::Debug("A {} {} {}", x, y, z);
 }
 
 
@@ -245,6 +301,8 @@ void Spriteset_MapDoom::Load_OBJ(std::string name) {
 		}*/
 	}
 
+	points3D.push_back({ 0,0,0 });
+
 	//for (auto p : pointsNoMaterial) {
 	//	p.color = color;
 	//	points3D.push_back(p);
@@ -252,57 +310,78 @@ void Spriteset_MapDoom::Load_OBJ(std::string name) {
 	//pointsNoMaterial.clear();
 }
 
-void Spriteset_MapDoom::Update() {
+void Spriteset_MapDoom::Update(bool first) {
 	//Output::Debug("Update");
 
-	int refresh_rate = 1;
+	int refresh_rate = 2;
 
-	for (auto& p : points3D) {
+	if (rotationX != 0 || rotationY != 0 || rotationZ != 0 || first) {
 
-		p.x -= centeroid.x;
-		p.y -= centeroid.y;
-		p.z -= centeroid.z;
-		rotate(p, rotationX / 1000.0, rotationY / 1000.0, rotationZ / 1000.0);
-		p.x += centeroid.x;
-		p.y += centeroid.y;
-		p.z += centeroid.z;
 
-		//if (timer % refresh_rate == 1 || refresh_rate == 1)
-			//pixel(p.x, p.y, p.z, p.color);
-	}
+		angleX += rotationX / 1000.0;
+		angleY += rotationY / 1000.0;
+		angleZ += rotationZ / 1000.0;
 
-	if (timer % refresh_rate == 1 || refresh_rate == 1) {
+		normalizeAngle(angleX);
+		normalizeAngle(angleY);
+		normalizeAngle(angleZ);
 
-		for (auto& c : connections3D) {
-			// line(points3D[c.a], points3D[c.b]);
+		for (auto& p : points3D) {
+
+			p.x -= centeroid.x;
+			p.y -= centeroid.y;
+			p.z -= centeroid.z;
+			rotate(p, rotationX / 1000.0, rotationY / 1000.0, rotationZ / 1000.0);
+			p.x += centeroid.x;
+			p.y += centeroid.y;
+			p.z += centeroid.z;
+
+			//if (timer % refresh_rate == 1 || refresh_rate == 1)
+				//pixel(p.x, p.y, p.z, p.color);
 		}
-		for (auto s : surfaces) {
 
-			std::vector<Point> s2;
-			for (auto p : s) {
-				Point p2 = { points3D[p.x].x, points3D[p.x].y, points3D[p.x].z, points3D[p.x].upper, p.color};
-				s2.push_back(p2);
+		if (timer % refresh_rate == 1 || refresh_rate == 1 || first) {
 
-				p2 = { points3D[p.y].x, points3D[p.y].y, points3D[p.y].z, points3D[p.y].upper, p.color };
-				s2.push_back(p2);
-
-				// Output::Debug(" {} {} {}", p2.color.red, p2.color.green , p2.color.blue);
+			for (auto& c : connections3D) {
+				// line(points3D[c.a], points3D[c.b]);
 			}
-			sortPoints(s2);
-			drawPolygon(s2);
+			for (auto s : surfaces) {
+
+				std::vector<Point> s2;
+				for (auto p : s) {
+					Point p2 = { points3D[p.x].x, points3D[p.x].y, points3D[p.x].z, points3D[p.x].upper, p.color };
+					s2.push_back(p2);
+
+					p2 = { points3D[p.y].x, points3D[p.y].y, points3D[p.y].z, points3D[p.y].upper, p.color };
+					s2.push_back(p2);
+
+					// Output::Debug(" {} {} {}", p2.color.red, p2.color.green , p2.color.blue);
+				}
+				sortPoints(s2);
+				drawPolygon(s2);
+
+			}
+
+			Show();
 
 		}
-
-		Show();
-
+		timer++;
+		points.clear();
 	}
-	timer++;
-	points.clear();
 }
+
+// Normalisation des angles pour rester entre 0 et 360
+void Spriteset_MapDoom::normalizeAngle(double& angle) {
+	angle = fmod(angle, 2 * M_PI);  // Modulo 2π pour rester dans l'intervalle [0, 2π]
+	if (angle < 0) {
+		angle += 2 * M_PI;  // Si négatif, on ajoute 2π pour ramener l'angle dans l'intervalle [0, 2π]
+	}
+}
+
 
 void Spriteset_MapDoom::pixel(float x, float y, float z, Color c) {
 
-	Point p = { x, y, z, false, c};
+	Point p = { x, y, z, false, c, true};
 	if (z < 0) {
 		p.upper = true;
 	}
@@ -420,23 +499,55 @@ float Spriteset_MapDoom::lerp(float a, float b, float f)
 	return a + f * (b - a);
 }
 
+//void Spriteset_MapDoom::rotate(Point& point, float x, float y, float z) {
+//
+//	float rad = 0;
+//
+//	rad = x;
+//	point.y = std::cos(rad) * point.y - std::sin(rad) * point.z;
+//	point.z = std::sin(rad) * point.y + std::cos(rad) * point.z;
+//
+//	rad = y;
+//	point.x = std::cos(rad) * point.x + std::sin(rad) * point.z;
+//	point.z = -std::sin(rad) * point.x + std::cos(rad) * point.z;
+//
+//	rad = z;
+//	point.x = std::cos(rad) * point.x - std::sin(rad) * point.y;
+//	point.y = std::sin(rad) * point.x + std::cos(rad) * point.y;
+//
+//}
+
 void Spriteset_MapDoom::rotate(Point& point, float x, float y, float z) {
+	float rad;
 
-	float rad = 0;
+	// Variables temporaires pour stocker les nouvelles valeurs
+	float new_x, new_y, new_z;
 
+	// Rotation autour de l'axe X
 	rad = x;
-	point.y = std::cos(rad) * point.y - std::sin(rad) * point.z;
-	point.z = std::sin(rad) * point.y + std::cos(rad) * point.z;
+	new_y = std::cos(rad) * point.y - std::sin(rad) * point.z;
+	new_z = std::sin(rad) * point.y + std::cos(rad) * point.z;
 
+	point.y = new_y;
+	point.z = new_z;
+
+	// Rotation autour de l'axe Y
 	rad = y;
-	point.x = std::cos(rad) * point.x + std::sin(rad) * point.z;
-	point.z = -std::sin(rad) * point.x + std::cos(rad) * point.z;
+	new_x = std::cos(rad) * point.x + std::sin(rad) * point.z;
+	new_z = -std::sin(rad) * point.x + std::cos(rad) * point.z;
 
+	point.x = new_x;
+	point.z = new_z;
+
+	// Rotation autour de l'axe Z
 	rad = z;
-	point.x = std::cos(rad) * point.x - std::sin(rad) * point.y;
-	point.y = std::sin(rad) * point.x + std::cos(rad) * point.y;
+	new_x = std::cos(rad) * point.x - std::sin(rad) * point.y;
+	new_y = std::sin(rad) * point.x + std::cos(rad) * point.y;
 
+	point.x = new_x;
+	point.y = new_y;
 }
+
 
 bool Spriteset_MapDoom::comparePoints(const Point& p1, const Point& p2) {
 	return p1.z < p2.z;
@@ -448,37 +559,55 @@ void Spriteset_MapDoom::Show() {
 	spriteUpper->Clear();
 
 	float zmin = 0;
-	float zmax = points[0].z;
+	float zmax = 0;
+	bool f = true;
 	for (const auto& p : points) {
 		//Output::Debug(" {}", p.z);
-		zmin = std::max(zmin, p.z);
-		zmax = std::min(zmax, p.z);
+		if (f) {
+			zmax = p.z;
+			f = false;
+		}
+		else {
+			zmin = std::max(zmin, p.z);
+			zmax = std::min(zmax, p.z);
+		}
 	}
 
 	std::sort(points.begin(), points.end(), std::greater<Point>());
 
+	bool pointsZB[999][999] = { false };
 
 	Rect r;
 	Color c = Color(255,0,0,255);
 	for (auto p : points) {
-		r = Rect(p.x + displayX + Player::screen_width / 2 , Player::screen_height - (p.y + displayY + Player::screen_height / 2), 1, 1);
 
-		int mult = ((p.z - zmin) / (zmax - zmin)) * 100;
+		int i = p.x + 999 / 2;
+		int j = p.y + 999 / 2;
 
-		int red, green, blue;
-		red = p.color.red;
-		green = p.color.green;
-		blue = p.color.blue;
+		if (p.exist && !pointsZB[i][j])
+		{
 
-		//Output::Debug(" {} {} {}", red, green, blue);
+			pointsZB[i][j] = true;
 
-		c = Color(red * mult / 100, green * mult / 100, blue * mult / 100, 255);
-		//c = p.color;
-		sprite->FillRect(r, c);
+			r = Rect(p.x + displayX + Player::screen_width / 2, Player::screen_height - (p.y + displayY + Player::screen_height / 2), 1, 1);
 
-		if (p.upper) {
-			c = Color(255, 0, 0, 255);
-			spriteUpper->FillRect(r, c);
+			int mult = ((p.z - zmin) / (zmax - zmin)) * 100;
+
+			int red, green, blue;
+			red = p.color.red;
+			green = p.color.green;
+			blue = p.color.blue;
+
+			//Output::Debug(" {} {} {}", red, green, blue);
+
+			c = Color(red * mult / 100, green * mult / 100, blue * mult / 100, 255);
+			//c = p.color;
+			sprite->FillRect(r, c);
+
+			if (p.upper) {
+				c = Color(255, 0, 0, 255);
+				spriteUpper->FillRect(r, c);
+			}
 		}
 	}
 	

@@ -128,7 +128,7 @@ void Spriteset_Map::Update() {
 }
 
 void Spriteset_Map::doomUpdate() {
-	doom->Update();
+	doom->Update(true);
 	doom_lower->SetBitmap(doom->sprite);
 	doom_upper->SetBitmap(doom->spriteUpper);
 }

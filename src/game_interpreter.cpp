@@ -828,6 +828,10 @@ bool Game_Interpreter::ExecuteCommand(lcf::rpg::EventCommand const& com) {
 			return CommandManiacCallCommand(com);
 		case 9901:
 			return Command3DPicture(com);
+		case 9902:
+			return Command3DPictureRotate(com);
+		case 9903:
+			return CommandGet3DPictureRotate(com);
 		default:
 			return true;
 	}
@@ -5180,3 +5184,28 @@ bool Game_Interpreter::Command3DPicture(lcf::rpg::EventCommand const& com) {
 
 	return true;
 }
+
+bool Game_Interpreter::Command3DPictureRotate(lcf::rpg::EventCommand const& com) {
+	int picID = ValueOrVariable(com.parameters[0], com.parameters[1]);
+	int rotX = ValueOrVariable(com.parameters[2], com.parameters[3]);
+	int rotY = ValueOrVariable(com.parameters[4], com.parameters[5]);
+	int rotZ = ValueOrVariable(com.parameters[6], com.parameters[7]);
+
+	Main_Data::game_pictures->Rotate3D(picID, rotX, rotY, rotZ);
+
+	return true;
+}
+
+bool Game_Interpreter::CommandGet3DPictureRotate(lcf::rpg::EventCommand const& com) {
+	int picID = ValueOrVariable(com.parameters[0], com.parameters[1]);
+	int varX = ValueOrVariable(com.parameters[2], com.parameters[3]);
+	int varY = ValueOrVariable(com.parameters[4], com.parameters[5]);
+	int varZ = ValueOrVariable(com.parameters[6], com.parameters[7]);
+
+	// Output::Debug(" {} {} {}", varX, varY, varZ);
+
+	Main_Data::game_pictures->Get3DRotation(picID, varX, varY, varZ);
+
+	return true;
+}
+

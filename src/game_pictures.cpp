@@ -600,7 +600,7 @@ void Game_Pictures::Picture::Update(bool is_battle) {
 	}
 
 	if (pic3D != nullptr) {
-		pic3D->Update();
+		pic3D->Update(false);
 		sprite->SetBitmap(pic3D->sprite);
 	}
 }
@@ -667,6 +667,16 @@ void Game_Pictures::Show3D(std::string n, int picID, int zoom, int dx, int dy, i
 	pic.Show3D(n, zoom, dx, dy, rx, ry, rz);
 }
 
+void Game_Pictures::Rotate3D(int picID, int rx, int ry, int rz) {
+	auto& pic = GetPicture(picID);
+	pic.Rotate3D(rx, ry, rz);
+}
+
+void Game_Pictures::Get3DRotation(int picID, int vx, int vy, int vz) {
+	auto& pic = GetPicture(picID);
+	pic.Get3DRotation(vx, vy, vz);
+}
+
 void Game_Pictures::Picture::Show3D(std::string n, int zoom, int dx, int dy, int rx, int ry, int rz) {
 	pic3D = new Spriteset_MapDoom(n, zoom, dx, dy, rx, ry, rz);
 
@@ -675,3 +685,17 @@ void Game_Pictures::Picture::Show3D(std::string n, int zoom, int dx, int dy, int
 		needs_update = true;
 	}
 }
+
+void Game_Pictures::Picture::Rotate3D(int rx, int ry, int rz) {
+	if (pic3D) {
+		pic3D->setRotation(rx, ry, rz);
+	}
+}
+
+void Game_Pictures::Picture::Get3DRotation(int vx, int vy, int vz) {
+	if (pic3D) {
+		pic3D->getRotation(vx, vy, vz);
+	}
+}
+
+

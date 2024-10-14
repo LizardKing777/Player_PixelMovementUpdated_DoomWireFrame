@@ -16,13 +16,14 @@ public:
 		int a, b;
 	};
 	struct Point {
-		float x, y, z;
-		bool upper;
+		float x, y, z = -99999999;
+		bool upper = false;
 		Color color;
+		bool exist = false;
 
 		bool operator > (const Point& str) const
 		{
-			return (z > str.z);
+			return (z < str.z);
 		}
 	};
 
@@ -33,12 +34,18 @@ public:
 	int rotationY = 0;
 	int rotationZ = 0;
 
+	double angleX, angleY, angleZ = 0;
+
 	int timer = 0;
 
 	Spriteset_MapDoom();
 	Spriteset_MapDoom(std::string n, int zoom, int dx, int dy, int rx, int ry, int rz);
 
-	void Update();
+	void setRotation(int rx, int ry, int rz);
+	void getRotation(int varX, int varY, int varZ);
+	void Spriteset_MapDoom::normalizeAngle(double& angle);
+
+	void Update(bool first);
 
 	BitmapRef sprite;
 	BitmapRef spriteUpper;
@@ -67,7 +74,6 @@ public:
 	vec3 centeroid;
 
 	void Show();
-	SDL_Renderer* renderer;
 
 protected:
 

@@ -86,6 +86,8 @@ public:
 	bool Show(int id, const ShowParams& params);
 	void Move(int id, const MoveParams& params);
 	void Show3D(std::string n, int picID, int zoom, int dx, int dy, int rx, int ry, int rz);
+	void Rotate3D(int picID, int rx, int ry, int rz);
+	void Get3DRotation(int picID, int vx, int vy, int vz);
 	void Erase(int id);
 	void EraseAll();
 
@@ -132,6 +134,8 @@ public:
 		bool IsWindowAttached() const;
 
 		void Show3D(std::string n, int zoom, int dx, int dy, int rx, int ry, int rz);
+		void Rotate3D(int rx, int ry, int rz);
+		void Get3DRotation(int vx, int vy, int vz);
 		Spriteset_MapDoom* pic3D = nullptr;
 	};
 
