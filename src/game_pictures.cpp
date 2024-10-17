@@ -676,6 +676,10 @@ void Game_Pictures::Get3DRotation(int picID, int vx, int vy, int vz) {
 	auto& pic = GetPicture(picID);
 	pic.Get3DRotation(vx, vy, vz);
 }
+void Game_Pictures::ShowDoomMap(int picID) {
+	auto& pic = GetPicture(picID);
+	pic.ShowDoomMap();
+}
 
 void Game_Pictures::Picture::Show3D(std::string n, int zoom, int dx, int dy, int rx, int ry, int rz) {
 	pic3D = new Spriteset_MapDoom(n, zoom, dx, dy, rx, ry, rz);
@@ -696,6 +700,16 @@ void Game_Pictures::Picture::Get3DRotation(int vx, int vy, int vz) {
 	if (pic3D) {
 		pic3D->getRotation(vx, vy, vz);
 	}
+}
+
+void Game_Pictures::Picture::ShowDoomMap() {
+	pic3D = new Spriteset_MapDoom();
+
+	if (!sprite) {
+		CreateSprite();
+		needs_update = true;
+	}
+	
 }
 
 

@@ -4,10 +4,42 @@
 #include <SDL2/SDL.h>
 #include <vector>
 #include "bitmap.h"
+#include <tilemap.h>
+#include "async_handler.h"
+#include "sprite.h"
 
 class Spriteset_MapDoom {
 public:
 
+	bool doomMap = false;
+	int map[999][999];
+
+	int mapW, mapH = 0;
+
+	// Structure représentant le joueur
+	struct PlayerDoom {
+		float x, y;   // Position du joueur
+		float angle;  // Angle de vue (orientation du joueur)
+		float fov;    // Champ de vision du joueur (Field of View)
+	};
+	PlayerDoom player = { 10 / 2.0 * TILE_SIZE, 8 / 2.0 * TILE_SIZE, 0, 110.0f * (M_PI / 180.0f) };
+
+	float castRay(float rayAngle, int &ray);
+	void renderScene();
+	void renderFloorAndCeiling(float playerX, float playerY, float playerAngle);
+
+	void renderTexturedFloor(float playerX, float playerY, float playerAngle);
+	BitmapRef mapTexture(int x, int y);
+	void OnTitleSpriteReady(FileRequestResult* result, int i);
+	BitmapRef bitmap;
+	BitmapRef bitmap2;
+	FileRequestBinding request_id;
+
+	std::unique_ptr<Tilemap> tilemap;
+
+
+	int mapWidth();
+	int mapHeight();
 
 	struct vec3 {
 		float x, y, z = 0;

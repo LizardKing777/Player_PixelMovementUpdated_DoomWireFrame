@@ -826,6 +826,8 @@ bool Game_Interpreter::ExecuteCommand(lcf::rpg::EventCommand const& com) {
 			return CommandManiacControlStrings(com);
 		case Cmd::Maniac_CallCommand:
 			return CommandManiacCallCommand(com);
+		case 9900:
+			return CommandSetDoomMap(com);
 		case 9901:
 			return Command3DPicture(com);
 		case 9902:
@@ -5205,6 +5207,15 @@ bool Game_Interpreter::CommandGet3DPictureRotate(lcf::rpg::EventCommand const& c
 	// Output::Debug(" {} {} {}", varX, varY, varZ);
 
 	Main_Data::game_pictures->Get3DRotation(picID, varX, varY, varZ);
+
+	return true;
+}
+
+bool Game_Interpreter::CommandSetDoomMap(lcf::rpg::EventCommand const& com) {
+
+	int picID = ValueOrVariable(com.parameters[0], com.parameters[1]);
+
+	Main_Data::game_pictures->ShowDoomMap(picID);
 
 	return true;
 }
