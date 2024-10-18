@@ -330,3 +330,39 @@ void Spriteset_Map::CalculatePanoramaRenderOffset() {
 		}
 	}
 }
+
+BitmapRef Spriteset_Map::GetEventSprite(int evid) {
+	for (int i = 0;i< character_sprites.size();i++) {
+		if (character_sprites[i]->GetCharacter()->GetType() == Game_Character::Type::Event) {
+			int id = ((Game_Event*)character_sprites[i]->GetCharacter())->GetId();
+			if (id == evid) {
+				BitmapRef bitmap = character_sprites[i]->GetBitmap();
+				BitmapRef b = Bitmap::Create(24,32, Color(0, 0, 0, 0));
+				Rect r = character_sprites[i]->GetSrcRect();
+
+				// If it's not a tileSprite, and sprite isn't fixed, we need to calc the rotation
+				if (Main_Data::game_player->GetDirection() > 0 && !character_sprites[i]->GetCharacter()->HasTileSprite()
+					&& character_sprites[i]->GetCharacter()->GetAnimationType() != Game_Character::AnimType::AnimType_fixed_continuous
+					&& character_sprites[i]->GetCharacter()->GetAnimationType() != Game_Character::AnimType::AnimType_fixed_graphic
+					&& character_sprites[i]->GetCharacter()->GetAnimationType() != Game_Character::AnimType::AnimType_fixed_non_continuous
+					&& character_sprites[i]->GetCharacter()->GetAnimationType() != Game_Character::AnimType::AnimType_spin
+					&& character_sprites[i]->GetCharacter()->GetAnimationType() != Game_Character::AnimType::AnimType_step_frame_fix) {
+					int data[3][4] = { {{3}, {-1}, {-1}, {-1}},
+						{{2}, {2}, {-2}, {-2}},
+						{{1}, {1}, {1}, {-3}}};
+
+					int d = data[Main_Data::game_player->GetDirection() - 1][character_sprites[i]->GetCharacter()->GetDirection()];
+
+					r.y += d * 32;
+					r.y = r.y % (32 * 4);
+
+				}
+
+				b->Blit(0, 0, *bitmap, r, 255);
+				return b;
+			}
+		}
+	}
+
+	return nullptr;
+}

@@ -21,10 +21,25 @@ public:
 		float x, y;   // Position du joueur
 		float angle;  // Angle de vue (orientation du joueur)
 		float fov;    // Champ de vision du joueur (Field of View)
+		float FOVangle = 110;
 	};
 	PlayerDoom player = { 10 / 2.0 * TILE_SIZE, 8 / 2.0 * TILE_SIZE, 0, 110.0f * (M_PI / 180.0f) };
 
-	float castRay(float rayAngle, int &ray);
+	// A
+	struct DrawingDoom {
+		int type; // 0 => Wall, 1 => Event
+		int x;
+		float distance; 
+		int textureX; 
+		int evID;
+
+		bool operator > (const DrawingDoom& d) const
+		{
+			return (distance > d.distance);
+		}
+	};
+
+	float castRay(float rayAngle, int &ray, std::vector<DrawingDoom> &d, int x);
 	void renderScene();
 	void renderFloorAndCeiling(float playerX, float playerY, float playerAngle);
 
@@ -106,6 +121,10 @@ public:
 	vec3 centeroid;
 
 	void Show();
+
+
+	int refresh_index = 0;
+	int refresh[6] = { 1,2,3,4,6,10 };
 
 protected:
 

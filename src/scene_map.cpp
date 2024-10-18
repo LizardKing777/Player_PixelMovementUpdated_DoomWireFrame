@@ -520,3 +520,10 @@ void Scene_Map::UpdateInn() {
 	Main_Data::game_system->BgmStop();
 	FinishInn();
 }
+
+
+BitmapRef Scene_Map::GetEventSprite(int i) {
+	auto s = spriteset->GetEventSprite(i);
+
+	return s;
+}

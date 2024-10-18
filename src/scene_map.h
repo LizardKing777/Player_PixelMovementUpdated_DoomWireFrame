@@ -49,6 +49,8 @@ public:
 
 	std::unique_ptr<Spriteset_Map> spriteset;
 
+	BitmapRef GetEventSprite(int i);
+
 private:
 	enum TeleportTransitionRule {
 		eTransitionNormal,

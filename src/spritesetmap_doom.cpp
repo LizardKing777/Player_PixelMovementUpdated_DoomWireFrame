@@ -12,6 +12,7 @@
 #include "game_map.h"
 #include "game_player.h"
 #include <cache.h>
+#include "scene_map.h"
 
 int Spriteset_MapDoom::mapWidth() {
 	return mapW;
@@ -20,7 +21,7 @@ int Spriteset_MapDoom::mapHeight() {
 	return mapH;
 }
 
-float Spriteset_MapDoom::castRay(float rayAngle, int &ray) {
+float Spriteset_MapDoom::castRay(float rayAngle, int& ray, std::vector<DrawingDoom>& d, int x) {
 
 	float rayPosX = player.x;
 	float rayPosY = player.y;
@@ -38,7 +39,26 @@ float Spriteset_MapDoom::castRay(float rayAngle, int &ray) {
 	while (!hit) {
 		// Vérification si le rayon sort des limites de la carte
 		if (mapX < 0 || mapX >= mapWidth() || mapY < 0 || mapY >= mapHeight()) {
+			rayDistance = -1;
 			break;  // Sortir de la boucle si on dépasse la carte
+		}
+
+		if ((int)rayPosX % TILE_SIZE == 8 && (int)rayPosY % TILE_SIZE == 8)
+		{
+			auto event = Game_Map::GetEventAt(mapX, mapY, true);
+			if (event) {
+				DrawingDoom de = { 1, x, rayDistance - 0.1f, (int)rayPosX % TILE_SIZE, event->GetId() };
+
+				auto b = std::find_if(d.begin(),
+					d.end(),
+					[&d1 = de]
+					(const DrawingDoom& d2) -> bool { return d2.type == 1 && d1.evID == d2.evID; });
+
+
+				if (b == d.end()) {
+					d.push_back(de);
+				}
+			}
 		}
 
 		// Vérifier si le rayon touche un mur
@@ -69,44 +89,98 @@ float Spriteset_MapDoom::castRay(float rayAngle, int &ray) {
 // Fonction pour dessiner la scène en utilisant les fonctions de Spriteset_MapDoom
 void Spriteset_MapDoom::renderScene() {
 
+	// Output::Debug("Render Scene");
 
-	//renderTexturedFloor(player.x, player.y, player.angle);
 
+	float FOV = player.fov;
+
+	renderTexturedFloor(player.x, player.y, player.angle);
+
+	std::vector<DrawingDoom> drawings = {};
 
 	for (int x = 0; x < Player::screen_width; x++) {
 		// Calculer l'angle du rayon
-		float rayAngle = player.angle + atan2(x - Player::screen_width / 2, Player::screen_width / 2);
+		//float rayAngle = player.angle + atan2(x - Player::screen_width / 2, Player::screen_width / 2);
+		float rayAngle = player.angle + (x - Player::screen_width / 2) * (FOV / Player::screen_width);
 
 
 		int ray = 0;
 
 		// Cast le rayon et obtenir la distance
-		float distance = castRay(rayAngle, ray);
+		float distance = castRay(rayAngle, ray, drawings, x);
 
-		// Si la distance est valide, dessinez les murs
-		if (distance > 0) {
-			int lineHeight = static_cast<int>(TILE_SIZE * Player::screen_height / distance);
-			int drawStart = (Player::screen_height - lineHeight) / 2;
-			int drawEnd = drawStart + lineHeight;
 
-			// Calculer la position de la texture
-			int textureX = static_cast<int>((distance / TILE_SIZE) * TILE_SIZE) % TILE_SIZE; // Choisir la colonne de texture
+		DrawingDoom d = {0, x, distance, ray, 0};
 
-			textureX = ray;
+		drawings.push_back(d);
 
-			Rect r = Rect(x, drawStart, 1, drawEnd - drawStart);
-			BitmapRef texture = mapTexture(1, 0);
+	}
 
-			if (texture) {
-				Rect srcRect = { textureX, 0, 1, texture->height() };
-				sprite->StretchBlit(r, *texture, srcRect, 255);
+	std::sort(drawings.begin(), drawings.end(), std::greater<DrawingDoom>());
+
+	Scene_Map* scene = (Scene_Map*)Scene::Find(Scene::Map).get();
+
+	
+	for (auto d : drawings) {
+
+		if (d.type == 0) {
+			float distance = d.distance;
+
+			//Output::Debug(" {}", distance);
+
+			if (distance > 0) {
+				int lineHeight = static_cast<int>(TILE_SIZE * Player::screen_height / distance);
+				int drawStart = (Player::screen_height - lineHeight) / 2;
+				int drawEnd = drawStart + lineHeight;
+
+				int textureX = d.textureX;
+
+				Rect r = Rect(d.x, drawStart, 1, drawEnd - drawStart);
+				BitmapRef texture = mapTexture(1, 0);
+
+				if (texture) {
+					Rect srcRect = { textureX, 0, 1, texture->height() };
+					sprite->StretchBlit(r, *texture, srcRect, 255);
+				}
+
 			}
-			//drawTexture(image, x, drawStart, 1, drawEnd - drawStart, wallTexture, textureX, 0);
+		}
+		else if (d.type == 1) {
+			float distance = d.distance;
+
+			//Output::Debug(" {} {}", d.evID, d.distance);
+
+			if (distance > 0) {
+
+				BitmapRef texture = mapTexture(0, 0);
+				texture = scene->GetEventSprite(d.evID);
+
+				if (texture) {
+
+					int lineHeight = static_cast<int>(TILE_SIZE * Player::screen_height / distance);
+					int drawStart = (Player::screen_height - lineHeight) / 2;
+					int textureX = d.textureX;
+
+					float d5 = (float) lineHeight / Player::screen_height;
+					int zx = d5 * 6 * texture->width();
+					int zy = d5 * 6 * texture->height();
+
+
+					//Output::Debug(" {} {} {} {} {}", z, textureX, d5, Player::screen_height/lineHeight, zf);
+
+					Rect srcRect = { 0, 0, texture->width(), texture->height()};
+					//Rect r = Rect(Game_Map::GetEvent(d.evID)->GetX() * TILE_SIZE - zx / 2, drawStart + zy / 4, zx, zy);
+					int sprCorrection = 4;
+					if (Game_Map::GetEvent(d.evID)->HasTileSprite())
+						sprCorrection = 1;
+					Rect r = Rect(d.x - zx / 2, drawStart + zy / sprCorrection, zx, zy);
+					sprite->StretchBlit(r, *texture, srcRect, 255);
+				}
+			}
 		}
 	}
 
-	return;
-
+	/*
 	//for (int x = 0; x < Player::screen_width; x++) {
 
 	//	float rayAngle = player.angle + atan2(x - Player::screen_width / 2, Player::screen_width / 2);
@@ -177,6 +251,7 @@ void Spriteset_MapDoom::renderScene() {
 	//	}
 
 	//}
+	*/
 }
 
 void Spriteset_MapDoom::renderFloorAndCeiling(float playerX, float playerY, float playerAngle) {
@@ -190,62 +265,171 @@ BitmapRef Spriteset_MapDoom::mapTexture(int x, int y) {
 	return bitmap2;
 }
 
-void Spriteset_MapDoom::renderTexturedFloor(float playerX, float playerY, float playerAngle) {
+void Spriteset_MapDoom::renderTexturedFloor(float pX, float pY, float playerAngle) {
+	//// Calcul du milieu de l'écran
+	//int middleY = Player::screen_height / 2;
+
+	//// Position du joueur dans le monde (en tuiles)
+	//float playerX = player.x / TILE_SIZE;
+	//float playerY = player.y / TILE_SIZE;
+
+	//// Parcourir chaque ligne sous le milieu de l'écran (sol)
+	//for (int y = middleY; y < Player::screen_height; y++) {
+	//	// Calcul de la distance projetée (distance au sol pour cette ligne)
+	//	float rowDistance = (Player::screen_height / (2.0f * (y - middleY)));
+
+	//	// Pré-calculer les directions pour les rayons extrêmes du champ de vision
+	//	float rayDirX0 = cos(player.angle - M_PI / 4);
+	//	float rayDirY0 = sin(player.angle - M_PI / 4);
+	//	float rayDirX1 = cos(player.angle + M_PI / 4);
+	//	float rayDirY1 = sin(player.angle + M_PI / 4);
+
+	//	// Calcul des étapes pour avancer dans les coordonnées du sol
+	//	float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / Player::screen_width;
+	//	float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / Player::screen_width;
+
+	//	// Position initiale du sol pour la ligne (rayon gauche)
+	//	float floorX = playerX + rowDistance * rayDirX0;
+	//	float floorY = playerY + rowDistance * rayDirY0;
+
+	//	// Parcourir chaque pixel de la ligne
+	//	for (int x = 0; x < Player::screen_width; x++) {
+	//		// Convertir les coordonnées du sol en indices de tuiles (fixer la texture à la tuile)
+	//		int mapX = static_cast<int>(floorX) % mapWidth();  // Modulo pour rester dans les limites de la carte
+	//		int mapY = static_cast<int>(floorY) % mapHeight();
+
+	//		// Récupérer la texture de la tuile correspondante
+	//		BitmapRef floorTexture = mapTexture(mapX, mapY);
+
+	//		// Si une texture est trouvée pour cette tuile
+	//		if (floorTexture) {
+	//			// Calculer la position dans la texture de la tuile
+	//			int texX = static_cast<int>((floorX - floor(floorX)) * floorTexture->width());
+	//			int texY = static_cast<int>((floorY - floor(floorY)) * floorTexture->height());
+
+	//			// Limiter texX et texY pour rester dans les bornes de la texture
+	//			texX = std::min(texX, floorTexture->width() - 1);
+	//			texY = std::min(texY, floorTexture->height() - 1);
+
+	//			// Dessiner la portion correspondante de la texture sur l'écran
+	//			Rect srcRect = { texX, texY, 1, 1 };
+	//			Rect destRect = { x, y, 1, 1 };
+	//			sprite->StretchBlit(destRect, *floorTexture, srcRect, 255);
+	//		}
+
+	//		// Avancer dans les coordonnées du sol pour le prochain pixel
+	//		floorX += floorStepX;
+	//		floorY += floorStepY;
+	//	}
+	//}
+
+	//return;
 
 
-	for (int x = 0; x < Player::screen_width; x++) {
-		// Calculer l'angle du rayon
-		float rayAngle = player.angle + atan2(x - Player::screen_width / 2, Player::screen_width / 2);
+	//int middleY = Player::screen_height / 2;
 
-		int ray = 0;
+	//// Pré-calculer les directions du champ de vision
+	//float rayDirX0 = cos(player.angle - M_PI / 4);  // Rayon gauche du champ de vision
+	//float rayDirY0 = sin(player.angle - M_PI / 4);
+	//float rayDirX1 = cos(player.angle + M_PI / 4);  // Rayon droit du champ de vision
+	//float rayDirY1 = sin(player.angle + M_PI / 4);
 
-		// Cast le rayon et obtenir la distance au mur
-		float distance = castRay(rayAngle, ray);
+	//// Pour chaque ligne horizontale sous le milieu de l'écran (sol)
+	//for (int y = middleY; y < Player::screen_height; y++) {
+	//	// Distance au plan de projection (sol) pour cette ligne
+	//	float rowDistance = (0.5 * Player::screen_height) / (y - middleY);
 
-		// Si la distance est valide
-		if (distance > 0) {
-			float floorDistance = (Player::screen_height / 2) / tan(player.fov / 2);
+	//	// Calcul des coordonnées du sol en fonction de la distance (interpolation des rayons)
+	//	float floorX = player.x / TILE_SIZE + rowDistance * rayDirX0;
+	//	float floorY = player.y / TILE_SIZE + rowDistance * rayDirY0;
 
-			// On utilise rayDistance pour déterminer la distance du sol
-			float actualFloorDistance = distance * cos(rayAngle - player.angle); // Correction avec l'angle du rayon
+	//	// Calcule la progression sur chaque pixel horizontal de la ligne
+	//	float floorStepX = rowDistance * (rayDirX1 - rayDirX0) / Player::screen_width;
+	//	float floorStepY = rowDistance * (rayDirY1 - rayDirY0) / Player::screen_width;
 
-			// Calculer la position de la texture sur le sol
-			float floorX = player.x + actualFloorDistance * cos(rayAngle);
-			float floorY = player.y + actualFloorDistance * sin(rayAngle);
+	//	// On parcourt chaque pixel de la ligne
+	//	for (int x = 0; x < Player::screen_width; x++) {
+	//		// Récupérer la position dans la carte
+	//		int cellX = static_cast<int>(floorX) % TILE_SIZE;
+	//		int cellY = static_cast<int>(floorY) % TILE_SIZE;
 
-			// Pour récupérer la position de la texture correcte
-			// Utiliser la position du joueur pour calculer textureX
-			int mapX = static_cast<int>(floorX / TILE_SIZE);
-			int mapY = static_cast<int>(floorY / TILE_SIZE);
-			float wallX = fmod(floorX, TILE_SIZE); // Position horizontale dans la tuile
+	//		// Récupérer la texture pour cette tuile de sol
+	//		//BitmapRef floorTexture = mapTexture(static_cast<int>(floorX), static_cast<int>(floorY));
+	//		BitmapRef floorTexture = mapTexture(0, static_cast<int>(floorY));
+
+	//		// Si une texture existe pour cette tuile
+	//		if (floorTexture) {
+	//			// Calculer les coordonnées de la texture
+	//			int texX = static_cast<int>((floorX - int(floorX)) * floorTexture->width());
+	//			int texY = static_cast<int>((floorY - int(floorY)) * floorTexture->height());
+
+	//			// Dessiner un pixel à la bonne position dans l'écran
+	//			Rect srcRect = { texX, texY, 1, 1 };
+	//			Rect destRect = { x, y, 1, 1 };
+	//			sprite->StretchBlit(destRect, *floorTexture, srcRect, 255);
+	//		}
+
+	//		// Avancer dans les coordonnées du sol (en fonction de la distance)
+	//		floorX += floorStepX;
+	//		floorY += floorStepY;
+	//	}
+	//}
+
+	//return;
+
+	//for (int x = 0; x < Player::screen_width; x++) {
+	//	// Calculer l'angle du rayon
+	//	float rayAngle = player.angle + atan2(x - Player::screen_width / 2, Player::screen_width / 2);
+
+	//	int ray = 0;
+
+	//	// Cast le rayon et obtenir la distance au mur
+	//	float distance = castRay(rayAngle, ray);
+
+	//	// Si la distance est valide
+	//	if (distance > 0) {
+	//		float floorDistance = (Player::screen_height / 2) / tan(player.fov / 2);
+
+	//		// On utilise rayDistance pour déterminer la distance du sol
+	//		float actualFloorDistance = distance * cos(rayAngle - player.angle); // Correction avec l'angle du rayon
+
+	//		// Calculer la position de la texture sur le sol
+	//		float floorX = player.x + actualFloorDistance * cos(rayAngle);
+	//		float floorY = player.y + actualFloorDistance * sin(rayAngle);
+
+	//		// Pour récupérer la position de la texture correcte
+	//		// Utiliser la position du joueur pour calculer textureX
+	//		int mapX = static_cast<int>(floorX / TILE_SIZE);
+	//		int mapY = static_cast<int>(floorY / TILE_SIZE);
+	//		float wallX = fmod(floorX, TILE_SIZE); // Position horizontale dans la tuile
 
 
-			// Dessiner le sol en utilisant la texture
-			for (int y = Player::screen_height / 2; y < Player::screen_height; y++) {
+	//		// Dessiner le sol en utilisant la texture
+	//		for (int y = Player::screen_height / 2; y < Player::screen_height; y++) {
 
-				//drawTexture(image, x, y, 1, 1, floorTexture, textureX, textureY);
+	//			//drawTexture(image, x, y, 1, 1, floorTexture, textureX, textureY);
 
 
-				Rect r = Rect(x, y, 1, 1);
-				BitmapRef texture = mapTexture(0, 0);
+	//			Rect r = Rect(x, y, 1, 1);
+	//			BitmapRef texture = mapTexture(0, 0);
 
-				if (texture) {
+	//			if (texture) {
 
-					int textureWidth = texture->width();
+	//				int textureWidth = texture->width();
 
-					// Calculer textureX
-					int textureX = static_cast<int>((wallX / TILE_SIZE) * textureWidth);
-					int textureY = static_cast<int>(((y - Player::screen_height / 2) / (Player::screen_height / 2)) * texture->height());
+	//				// Calculer textureX
+	//				int textureX = static_cast<int>((wallX / TILE_SIZE) * textureWidth);
+	//				int textureY = static_cast<int>(((y - Player::screen_height / 2) / (Player::screen_height / 2)) * texture->height());
 
-					// Assurez-vous que textureY est dans les limites de la texture
-					textureY = std::min(textureY, texture->height() - 1);
+	//				// Assurez-vous que textureY est dans les limites de la texture
+	//				textureY = std::min(textureY, texture->height() - 1);
 
-					Rect srcRect = { textureX, textureY, 1, 1 };
-					sprite->StretchBlit(r, *texture, srcRect, 255);
-				}
-			}
-		}
-	}
+	//				Rect srcRect = { textureX, textureY, 1, 1 };
+	//				sprite->StretchBlit(r, *texture, srcRect, 255);
+	//			}
+	//		}
+	//	}
+	//}
 
 }
 
@@ -268,8 +452,9 @@ Spriteset_MapDoom::Spriteset_MapDoom() {
 		}
 	}
 
-	player.x = Main_Data::game_player->GetX() * TILE_SIZE;
-	player.y = Main_Data::game_player->GetY() * TILE_SIZE;
+	player.x = Main_Data::game_player->GetX() * TILE_SIZE + TILE_SIZE / 2;
+	player.y = Main_Data::game_player->GetY() * TILE_SIZE + TILE_SIZE / 2;
+	player.angle = (Main_Data::game_player->GetDirection() * 90 - 90) * M_PI / 180;
 
 	sprite = Bitmap::Create(Player::screen_width, Player::screen_height);
 	spriteUpper = Bitmap::Create(Player::screen_width, Player::screen_height);
@@ -558,54 +743,184 @@ void Spriteset_MapDoom::Load_OBJ(std::string name) {
 }
 
 void Spriteset_MapDoom::Update(bool first) {
-	//Output::Debug("Update");
-
-	int refresh_rate = 2;
+	// Output::Debug("Update");
+	if (Input::IsRawKeyTriggered(Input::Keys::F3)) {
+		refresh_index = (refresh_index + 1) % 6;
+		Output::Info("Refresh rate : {} fps", 60 / refresh[refresh_index]);
+	}
+	int refresh_rate = refresh[refresh_index];
 
 	if (doomMap) {
 		int s = 1;
 		float angle = 0.02;
 
-		if (Input::IsPressed(Input::UP)) {  // Avancer
-			float px = player.x + cos(player.angle) * s * 16;
-			float py = player.y + sin(player.angle) * s * 16;
+		if (Input::IsPressed(Input::DIVIDE)) {
+			player.FOVangle -= 1;
+			player.fov = player.FOVangle * (M_PI / 180.0f);
+		}
+		if (Input::IsPressed(Input::MULTIPLY)) {
+			player.FOVangle += 1;
+			player.fov = player.FOVangle * (M_PI / 180.0f);
+		}
 
-			int ppx = px / TILE_SIZE;
-			int ppy = py / TILE_SIZE;
 
-			Output::Debug(" {} {} {}", ppx, ppy, map[ppx][ppy]);
+		if (Main_Data::game_player->canMove) {
+			if (Main_Data::game_player->doomMoveType == 0) { // Tile Movement
 
-			if (ppx < mapWidth() && ppy < mapHeight() && ppx >= 0 && ppy >= 0)
-				if (map[ppy][ppx] == 0) {
-					player.x = player.x + cos(player.angle) * s;
-					player.y = player.y + sin(player.angle) * s;
+				if (Main_Data::game_player->doomWait != 0) {
+					static const int move_speed[] = { 64, 32, 24, 16, 12, 8 };
+
+					float x = Main_Data::game_player->GetX() * TILE_SIZE + TILE_SIZE / 2;
+					float y = Main_Data::game_player->GetY() * TILE_SIZE + TILE_SIZE / 2;
+
+					if (x != player.x || y != player.y) {
+
+						float dx = (x - player.x) / Main_Data::game_player->doomWait;
+						float dy = (y - player.y) / Main_Data::game_player->doomWait;
+
+						if (dx != 0)
+							player.x += dx;
+						if (dy != 0)
+							player.y += dy;
+
+					}
+
+					float a = (Main_Data::game_player->GetDirection() * 90 - 90) * M_PI / 180;
+					if (player.angle < 0 && a > 0)
+						player.angle += 2 * M_PI;
+
+					if (player.angle > 0 && a < 0) {
+						player.angle -= 2 * M_PI;
+					}
+
+					angle = abs(a - player.angle) / Main_Data::game_player->doomWait;
+
+
+					if (a != player.angle) {
+						if (a < player.angle)
+							player.angle -= angle;
+						if (a > player.angle)
+							player.angle += angle;
+						if (Main_Data::game_player->doomWait == 0)
+							player.angle = a;
+					}
+					// Output::Debug("l {} {} {}", player.angle, a, angle);
 				}
-		}
-		if (Input::IsPressed(Input::DOWN)) {  // Reculer
-			float px = player.x - cos(player.angle) * s;
-			float py = player.y - sin(player.angle) * s;
 
-			int ppx = px / TILE_SIZE;
-			int ppy = py / TILE_SIZE;
+			}
+			else { // Pixel Movement
+				if (Input::IsPressed(Input::UP)) {  // Avancer
+					float px = player.x + cos(player.angle) * s * TILE_SIZE;
+					float py = player.y + sin(player.angle) * s * TILE_SIZE;
 
-			Output::Debug(" {} {} {}", ppx, ppy, map[ppx][ppy]);
+					int ppx = px / TILE_SIZE;
+					int ppy = py / TILE_SIZE;
 
-			if (ppx < mapWidth() && ppy < mapHeight() && ppx >= 0 && ppy >= 0)
-				if (map[ppy][ppx] == 0) {
-					player.x = px;
-					player.y = py;
+					//Output::Debug(" {} {} {}", ppx, ppy, map[ppx][ppy]);
+
+					if (ppx < mapWidth() && ppy < mapHeight() && ppx >= 0 && ppy >= 0) {
+						int x = player.x / TILE_SIZE;
+						int y = player.y / TILE_SIZE;
+
+						int dx = ppx;
+						int dy = ppy;
+
+						//Output::Debug(" {} {} {} {} {} {}", x, y, ppx, ppy, Main_Data::game_player->MakeWay(x, y, dx, y) , Main_Data::game_player->MakeWay(x, y, x, dy));
+
+						if (Main_Data::game_player->MakeWay(x, y, dx, dy) || (x == dx && y == dy)) {
+							player.x = player.x + cos(player.angle) * s;
+							player.y = player.y + sin(player.angle) * s;
+
+							Main_Data::game_player->SetX(player.x / TILE_SIZE);
+							Main_Data::game_player->SetY(player.y / TILE_SIZE);
+						}
+						else {
+							if (Main_Data::game_player->MakeWay(x, y, dx, y)) {
+								player.x = player.x + cos(player.angle) * s;
+
+								Main_Data::game_player->SetX(player.x / TILE_SIZE);
+								Main_Data::game_player->SetY(player.y / TILE_SIZE);
+							}
+							else if (Main_Data::game_player->MakeWay(x, y, x, dy)) {
+								player.y = player.y + sin(player.angle) * s;
+
+								Main_Data::game_player->SetX(player.x / TILE_SIZE);
+								Main_Data::game_player->SetY(player.y / TILE_SIZE);
+							}
+						}
+
+
+						int front_x = Game_Map::XwithDirection(Main_Data::game_player->GetX(), Main_Data::game_player->GetDirection());
+						int front_y = Game_Map::YwithDirection(Main_Data::game_player->GetY(), Main_Data::game_player->GetDirection());
+
+						Output::Debug("XY {} {}", front_x, front_y);
+
+						bool action = Main_Data::game_player->CheckEventTriggerThere({ lcf::rpg::EventPage::Trigger_touched, lcf::rpg::EventPage::Trigger_collision }, front_x, front_y, false);
+
+						Output::Debug("Action {}", action);
+
+					}
 				}
-		}
-		if (Input::IsPressed(Input::LEFT)) {  // Tourner à gauche
-			player.angle -= angle;
-		}
-		if (Input::IsPressed(Input::RIGHT)) {  // Tourner à droite
-			player.angle += angle;
+				if (Input::IsPressed(Input::DOWN)) {  // Reculer
+					float px = player.x - cos(player.angle) * s;
+					float py = player.y - sin(player.angle) * s;
+
+					int ppx = px / TILE_SIZE;
+					int ppy = py / TILE_SIZE;
+
+					//Output::Debug(" {} {} {}", ppx, ppy, map[ppx][ppy]);
+
+					if (ppx < mapWidth() && ppy < mapHeight() && ppx >= 0 && ppy >= 0)
+						if (map[ppy][ppx] == 0) {
+							player.x = px;
+							player.y = py;
+						}
+				}
+				if (Input::IsPressed(Input::LEFT)) {  // Tourner à gauche
+					player.angle -= angle;
+					if (player.angle < 0)
+						player.angle += 2 * M_PI;
+					if (player.angle > 2 * M_PI)
+						player.angle -= 2 * M_PI;
+
+					float a = (player.angle) * 180.0f / M_PI + 45;
+					if (a < 0)
+						a += 360;
+					if (a > 360)
+						a -= 360;
+					int dir = ((int)(a / 90) + 1) % 4;
+
+					Main_Data::game_player->SetFacing(dir);
+					Main_Data::game_player->SetDirection(dir);
+				}
+				if (Input::IsPressed(Input::RIGHT)) {  // Tourner à droite
+					player.angle += angle;
+					if (player.angle < 0)
+						player.angle += 2 * M_PI;
+					if (player.angle > 2 * M_PI)
+						player.angle -= 2 * M_PI;
+
+					float a = (player.angle) * 180.0f / M_PI + 45;
+					if (a < 0)
+						a += 360;
+					if (a > 360)
+						a -= 360;
+					int dir = ((int)(a / 90) + 1) % 4;
+
+					Main_Data::game_player->SetFacing(dir);
+					Main_Data::game_player->SetDirection(dir);
+				}
+			}
 		}
 
-		sprite->Clear();
-		renderScene();
+		if (timer % refresh_rate == 1 || refresh_rate == 1 || first) {
+			sprite->Clear();
+			renderScene();
+		}
 		points.clear();
+
+
+		timer++;
 
 		return;
 	}

@@ -97,6 +97,8 @@ public:
 	/** @return y offset for the rendering of the tilemap and events */
 	int GetRenderOy() const;
 
+	BitmapRef GetEventSprite(int i);
+
 protected:
 	std::unique_ptr<Tilemap> tilemap;
 	std::unique_ptr<Plane> panorama;
