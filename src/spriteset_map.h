@@ -98,6 +98,8 @@ public:
 	int GetRenderOy() const;
 
 	BitmapRef GetEventSprite(int i);
+	BitmapRef GetChipset();
+	BitmapRef GetTile(int x, int y, int layer);
 
 protected:
 	std::unique_ptr<Tilemap> tilemap;

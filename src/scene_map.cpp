@@ -527,3 +527,12 @@ BitmapRef Scene_Map::GetEventSprite(int i) {
 
 	return s;
 }
+
+
+BitmapRef Scene_Map::GetChipset() {
+	return spriteset->GetChipset();
+}
+
+BitmapRef Scene_Map::GetTile(int x, int y, int layer) {
+	return spriteset->GetTile(x, y, layer);
+}

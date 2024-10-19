@@ -153,7 +153,7 @@ public:
 	void UpdateSaveCounts(int db_save_count, int map_save_count);
 
 	bool canMove = false;
-	int doomMoveType = 0;
+	int doomMoveType = 1;
 	int doomWait = 0;
 
 	// Move things here

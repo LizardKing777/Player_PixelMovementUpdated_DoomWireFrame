@@ -98,6 +98,8 @@ public:
 
 	void SetTone(Tone tone);
 
+	BitmapRef DrawTileDoom(int x, int y, bool allow_fast_blit = true);
+
 private:
 	BitmapRef chipset;
 	BitmapRef chipset_effect;

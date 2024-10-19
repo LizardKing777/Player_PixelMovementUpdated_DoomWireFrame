@@ -366,3 +366,12 @@ BitmapRef Spriteset_Map::GetEventSprite(int evid) {
 
 	return nullptr;
 }
+
+BitmapRef Spriteset_Map::GetChipset() {
+	return tilemap->GetChipset();
+}
+
+
+BitmapRef Spriteset_Map::GetTile(int x, int y, int layer) {
+	return tilemap->GetTile(x, y, layer);
+}

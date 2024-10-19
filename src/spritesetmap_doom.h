@@ -32,6 +32,7 @@ public:
 		float distance; 
 		int textureX; 
 		int evID;
+		Point position;
 
 		bool operator > (const DrawingDoom& d) const
 		{
@@ -39,15 +40,17 @@ public:
 		}
 	};
 
-	float castRay(float rayAngle, int &ray, std::vector<DrawingDoom> &d, int x);
+	float castRay(float rayAngle, int &ray, std::vector<DrawingDoom> &d, int x, int &mx, int &my);
 	void renderScene();
 	void renderFloorAndCeiling(float playerX, float playerY, float playerAngle);
 
-	void renderTexturedFloor(float playerX, float playerY, float playerAngle);
+	void renderTexturedFloor();
 	BitmapRef mapTexture(int x, int y);
 	void OnTitleSpriteReady(FileRequestResult* result, int i);
 	BitmapRef bitmap;
 	BitmapRef bitmap2;
+
+	BitmapRef chipset;
 	FileRequestBinding request_id;
 
 	std::unique_ptr<Tilemap> tilemap;
