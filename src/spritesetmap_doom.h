@@ -7,6 +7,7 @@
 #include <tilemap.h>
 #include "async_handler.h"
 #include "sprite.h"
+#include "scene.h"
 
 class Spriteset_MapDoom {
 public:
@@ -25,7 +26,7 @@ public:
 	};
 	PlayerDoom player = { 10 / 2.0 * TILE_SIZE, 8 / 2.0 * TILE_SIZE, 0, 110.0f * (M_PI / 180.0f) };
 
-	// A
+	// 
 	struct DrawingDoom {
 		int type; // 0 => Wall, 1 => Event
 		int x;
@@ -39,25 +40,6 @@ public:
 			return (distance > d.distance);
 		}
 	};
-
-	float castRay(float rayAngle, int &ray, std::vector<DrawingDoom> &d, int x, int &mx, int &my);
-	void renderScene();
-	void renderFloorAndCeiling(float playerX, float playerY, float playerAngle);
-
-	void renderTexturedFloor();
-	BitmapRef mapTexture(int x, int y);
-	void OnTitleSpriteReady(FileRequestResult* result, int i);
-	BitmapRef bitmap;
-	BitmapRef bitmap2;
-
-	BitmapRef chipset;
-	FileRequestBinding request_id;
-
-	std::unique_ptr<Tilemap> tilemap;
-
-
-	int mapWidth();
-	int mapHeight();
 
 	struct vec3 {
 		float x, y, z = 0;
@@ -77,6 +59,28 @@ public:
 		}
 	};
 
+	struct EventWall {
+		int x, y, id, type;
+	};
+	std::vector<EventWall> events_wall;
+
+	float castRay7();
+	float castRay(float rayAngle, int &ray, std::vector<DrawingDoom> &d, int x, int &mx, int &my);
+	void renderScene();
+	void renderMode7();
+
+	void renderTexturedFloor(float x, float distance, float angle);
+	void renderTexturedFloor();
+	BitmapRef mapTexture(int x, int y);
+	void OnTitleSpriteReady(FileRequestResult* result, int i);
+	BitmapRef bitmap;
+	BitmapRef bitmap2;
+
+	BitmapRef chipset;
+	FileRequestBinding request_id;
+
+	int mapWidth();
+	int mapHeight();
 
 	int displayX = 0;
 	int displayY = 0;
@@ -128,6 +132,17 @@ public:
 
 	int refresh_index = 0;
 	int refresh[6] = { 1,2,3,4,6,10 };
+
+
+	Scene* scene_map = nullptr;
+	//std::shared_ptr<Scene_Map*> scene_map;
+	//std::unique_ptr<Scene_Map*> scene_map;
+	//std::unique_ptr<Scene_Map> scene_map;
+	//BitmapRef mapTextures[9999][999];
+	BitmapRef mapTexturesID[9999];
+
+	float scaleX = 96;
+	float scaleY = scaleX;
 
 protected:
 

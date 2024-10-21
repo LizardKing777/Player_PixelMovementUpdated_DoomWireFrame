@@ -696,6 +696,8 @@ namespace Game_Map {
 	void AddEventToSwitchCache(lcf::rpg::Event& ev, int switch_id);
 	void AddEventToVariableCache(lcf::rpg::Event& ev, int var_id);
 
+	int GetTileID(int x, int y, int layer);
+
 	namespace Parallax {
 		struct Params {
 			std::string name;

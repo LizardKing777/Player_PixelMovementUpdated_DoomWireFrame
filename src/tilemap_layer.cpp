@@ -710,12 +710,110 @@ void TilemapLayer::SetTone(Tone tone) {
 	chipset_tone_tiles.clear();
 }
 
+int TilemapLayer::GetTileDoom(int map_x, int map_y, int layer) {
+	// Get the tile data
+	TileData& tile = GetDataCache(map_x, map_y);
+
+	const auto frames = Main_Data::game_system ? Main_Data::game_system->GetFrameCounter() : 0;
+	auto animation_step_c = (frames / 6) % 4;
+	auto animation_step_ab = frames / animation_speed;
+	if (animation_type) {
+		animation_step_ab %= 3;
+	}
+	else {
+		animation_step_ab %= 4;
+		if (animation_step_ab == 3) {
+			animation_step_ab = 1;
+		}
+	}
+
+	int row = 0;
+	int col = 0;
+
+	int map_draw_x = 0;
+	int map_draw_y = 0;
+
+	if (layer == 0) {
+		// If lower layer
+		bool allow_fast_blit = (tile.z == TileBelow);
+
+		if (tile.ID >= BLOCK_E && tile.ID < BLOCK_E + BLOCK_E_TILES) {
+			int id = substitutions[tile.ID - BLOCK_E];
+			// If Block E
+
+			// Get the tile coordinates from chipset
+			if (id < 96) {
+				// If from first column of the block
+				col = 12 + id % 6;
+				row = id / 6;
+			}
+			else {
+				// If from second column of the block
+				col = 18 + (id - 96) % 6;
+				row = (id - 96) / 6;
+			}
+
+		}
+		else if (tile.ID >= BLOCK_C && tile.ID < BLOCK_D) {
+			// If Block C
+
+			// Get the tile coordinates from chipset
+			col = 3 + (tile.ID - BLOCK_C) / 50;
+			row = 4 + animation_step_c;
+
+		}
+		else if (tile.ID < BLOCK_C) {
+			// If Blocks A1, A2, B
+
+			// Draw the tile from autotile cache
+			TileXY pos = GetCachedAutotileAB(tile.ID, animation_step_ab);
+
+			col = pos.x;
+			row = pos.y;
+
+			return row * TILE_SIZE + col + 1000;
+
+			return tile.ID + animation_step_ab * 1000;
+
+		}
+		else {
+			// If blocks D1-D12
+
+			// Draw the tile from autotile cache
+			TileXY pos = GetCachedAutotileD(tile.ID);
+
+			col = pos.x;
+			row = pos.y;
+
+		}
+	}
+	else {
+		// If upper layer
+
+		// Check that block F is being drawn
+		if (tile.ID >= BLOCK_F && tile.ID < BLOCK_F + BLOCK_F_TILES) {
+			int id = substitutions[tile.ID - BLOCK_F];
+
+			// Get the tile coordinates from chipset
+			if (id < 48) {
+				// If from first column of the block
+				col = 18 + id % 6;
+				row = 8 + id / 6;
+			}
+			else {
+				// If from second column of the block
+				col = 24 + (id - 48) % 6;
+				row = (id - 48) / 6;
+			}
+
+
+		}
+	}
+
+	return row * TILE_SIZE + col;
+}
+
 BitmapRef TilemapLayer::DrawTileDoom(int map_x, int map_y, bool allow_fast_blit) {
-	/*auto op = tileset.GetTileOpacity(col, row);
-	if (op != ImageOpacity::Transparent) {*/
-	//BitmapRef dst = Bitmap::Create(TILE_SIZE, TILE_SIZE, Color(0, 0, 0, 0));
-	//auto tone_hash = MakeETileHash(id);
-	//DrawTile(*dst, *chipset, *chipset_effect, 0, 0, row, col, tone_hash, allow_fast_blit);
 
 	// Get the tile data
 	TileData& tile = GetDataCache(map_x, map_y);
@@ -738,96 +836,91 @@ BitmapRef TilemapLayer::DrawTileDoom(int map_x, int map_y, bool allow_fast_blit)
 	int map_draw_x = 0;
 	int map_draw_y = 0;
 
-	// Draw the sublayer if its z is being draw now
-	//if (z_order == tile.z) {
-		if (layer == 0) {
-			// If lower layer
-			bool allow_fast_blit = (tile.z == TileBelow);
+	if (layer == 0) {
+		// If lower layer
+		bool allow_fast_blit = (tile.z == TileBelow);
 
-			if (tile.ID >= BLOCK_E && tile.ID < BLOCK_E + BLOCK_E_TILES) {
-				int id = substitutions[tile.ID - BLOCK_E];
-				// If Block E
+		if (tile.ID >= BLOCK_E && tile.ID < BLOCK_E + BLOCK_E_TILES) {
+			int id = substitutions[tile.ID - BLOCK_E];
+			// If Block E
 
-				int row, col;
+			int row, col;
 
-				// Get the tile coordinates from chipset
-				if (id < 96) {
-					// If from first column of the block
-					col = 12 + id % 6;
-					row = id / 6;
-				}
-				else {
-					// If from second column of the block
-					col = 18 + (id - 96) % 6;
-					row = (id - 96) / 6;
-				}
-
-				auto tone_hash = MakeETileHash(id);
-				DrawTile(*dst, *chipset, *chipset_effect, map_draw_x, map_draw_y, row, col, tone_hash, allow_fast_blit);
-			}
-			else if (tile.ID >= BLOCK_C && tile.ID < BLOCK_D) {
-				// If Block C
-
-				// Get the tile coordinates from chipset
-				int col = 3 + (tile.ID - BLOCK_C) / 50;
-				int row = 4 + animation_step_c;
-
-				auto tone_hash = MakeCTileHash(tile.ID, animation_step_c);
-				DrawTile(*dst, *chipset, *chipset_effect, map_draw_x, map_draw_y, row, col, tone_hash, allow_fast_blit);
-			}
-			else if (tile.ID < BLOCK_C) {
-				// If Blocks A1, A2, B
-
-				// Draw the tile from autotile cache
-				TileXY pos = GetCachedAutotileAB(tile.ID, animation_step_ab);
-
-				int col = pos.x;
-				int row = pos.y;
-
-				// Create tone changed tile
-				auto tone_hash = MakeAbTileHash(tile.ID, animation_step_ab);
-				DrawTile(*dst, *autotiles_ab_screen, *autotiles_ab_screen_effect, map_draw_x, map_draw_y, row, col, tone_hash, allow_fast_blit);
+			// Get the tile coordinates from chipset
+			if (id < 96) {
+				// If from first column of the block
+				col = 12 + id % 6;
+				row = id / 6;
 			}
 			else {
-				// If blocks D1-D12
-
-				// Draw the tile from autotile cache
-				TileXY pos = GetCachedAutotileD(tile.ID);
-
-				int col = pos.x;
-				int row = pos.y;
-
-				auto tone_hash = MakeDTileHash(tile.ID);
-				DrawTile(*dst, *autotiles_d_screen, *autotiles_d_screen_effect, map_draw_x, map_draw_y, row, col, tone_hash, allow_fast_blit);
+				// If from second column of the block
+				col = 18 + (id - 96) % 6;
+				row = (id - 96) / 6;
 			}
+
+			auto tone_hash = MakeETileHash(id);
+			DrawTile(*dst, *chipset, *chipset_effect, map_draw_x, map_draw_y, row, col, tone_hash, allow_fast_blit);
+		}
+		else if (tile.ID >= BLOCK_C && tile.ID < BLOCK_D) {
+			// If Block C
+
+			// Get the tile coordinates from chipset
+			int col = 3 + (tile.ID - BLOCK_C) / 50;
+			int row = 4 + animation_step_c;
+
+			auto tone_hash = MakeCTileHash(tile.ID, animation_step_c);
+			DrawTile(*dst, *chipset, *chipset_effect, map_draw_x, map_draw_y, row, col, tone_hash, allow_fast_blit);
+		}
+		else if (tile.ID < BLOCK_C) {
+			// If Blocks A1, A2, B
+
+			// Draw the tile from autotile cache
+			TileXY pos = GetCachedAutotileAB(tile.ID, animation_step_ab);
+
+			int col = pos.x;
+			int row = pos.y;
+
+			// Create tone changed tile
+			auto tone_hash = MakeAbTileHash(tile.ID, animation_step_ab);
+			DrawTile(*dst, *autotiles_ab_screen, *autotiles_ab_screen_effect, map_draw_x, map_draw_y, row, col, tone_hash, allow_fast_blit);
 		}
 		else {
-			// If upper layer
+			// If blocks D1-D12
 
-			// Check that block F is being drawn
-			if (tile.ID >= BLOCK_F && tile.ID < BLOCK_F + BLOCK_F_TILES) {
-				int id = substitutions[tile.ID - BLOCK_F];
-				int row, col;
+			// Draw the tile from autotile cache
+			TileXY pos = GetCachedAutotileD(tile.ID);
 
-				// Get the tile coordinates from chipset
-				if (id < 48) {
-					// If from first column of the block
-					col = 18 + id % 6;
-					row = 8 + id / 6;
-				}
-				else {
-					// If from second column of the block
-					col = 24 + (id - 48) % 6;
-					row = (id - 48) / 6;
-				}
+			int col = pos.x;
+			int row = pos.y;
 
-				auto tone_hash = MakeFTileHash(id);
-				DrawTile(*dst, *chipset, *chipset_effect, map_draw_x, map_draw_y, row, col, tone_hash);
-			}
+			auto tone_hash = MakeDTileHash(tile.ID);
+			DrawTile(*dst, *autotiles_d_screen, *autotiles_d_screen_effect, map_draw_x, map_draw_y, row, col, tone_hash, allow_fast_blit);
 		}
-	//}
+	}
+	else {
+		// If upper layer
 
+		// Check that block F is being drawn
+		if (tile.ID >= BLOCK_F && tile.ID < BLOCK_F + BLOCK_F_TILES) {
+			int id = substitutions[tile.ID - BLOCK_F];
+			int row, col;
+
+			// Get the tile coordinates from chipset
+			if (id < 48) {
+				// If from first column of the block
+				col = 18 + id % 6;
+				row = 8 + id / 6;
+			}
+			else {
+				// If from second column of the block
+				col = 24 + (id - 48) % 6;
+				row = (id - 48) / 6;
+			}
+
+			auto tone_hash = MakeFTileHash(id);
+			DrawTile(*dst, *chipset, *chipset_effect, map_draw_x, map_draw_y, row, col, tone_hash);
+		}
+	}
 
 	return dst;
-	//}
 }

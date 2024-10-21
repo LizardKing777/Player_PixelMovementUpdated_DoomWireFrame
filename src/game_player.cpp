@@ -327,38 +327,62 @@ void Game_Player::UpdateNextMovementAction() {
 			break;
 	}
 
-	if (move_dir >= 0 && (doomMoveType <= 0 && doomWait <= 0)) {
+	if (move_dir >= 0 && ((doomMoveType <= 0 || doomMoveType == 2) && doomWait <= 0)) {
 		SetThrough((Player::debug_flag && Input::IsPressed(Input::DEBUG_THROUGH)) || data()->move_route_through);
 		if (doomMoveType == 0) {
 
 			static const int turn_speed[] = { 64, 32, 24, 16, 12, 8 };
+			static const int move_speed[] = { 16, 8, 6, 4, 3, 2 };
 
 			if (move_dir == Left) {
-
-				Turn90DegreeLeft();
-				SetFacing(GetDirection());
-				doomWait = turn_speed[GetMoveSpeed() - 1];//1 << (1 + GetMoveSpeed());
-
+				if (Input::IsPressed(Input::SHIFT)) {
+					int d = GetDirection();
+					Turn90DegreeLeft();
+					Move(GetDirection());
+					doomWait = move_speed[GetMoveSpeed() - 1];
+					SetDirection(d);
+				}
+				else {
+					Turn90DegreeLeft();
+					SetFacing(GetDirection());
+					doomWait = turn_speed[GetMoveSpeed() - 1];//1 << (1 + GetMoveSpeed());
+				}
 			}
 			else if (move_dir == Right) {
 
-				Turn90DegreeRight();
-				SetFacing(GetDirection());
-				doomWait = turn_speed[GetMoveSpeed() - 1];
+				if (Input::IsPressed(Input::SHIFT)) {
+					int d = GetDirection();
+					Turn90DegreeRight();
+					Move(GetDirection());
+					doomWait = move_speed[GetMoveSpeed() - 1];
+					SetDirection(d);
+				}
+				else {
+					Turn90DegreeRight();
+					SetFacing(GetDirection());
+					doomWait = turn_speed[GetMoveSpeed() - 1];
+				}
 
 			}
 			else if (move_dir == Up) {
 
 				Move(GetDirection());
-				static const int move_speed[] = { 16, 8, 6, 4, 3, 2 };
 				doomWait = move_speed[GetMoveSpeed() - 1];
 
 			}
 			else if (move_dir == Down) {
-
-				Turn180Degree();
-				SetFacing(GetDirection());
-				doomWait = turn_speed[GetMoveSpeed() - 1];
+				if (Input::IsPressed(Input::SHIFT)) {
+					int d = GetDirection();
+					Turn180Degree();
+					Move(GetDirection());
+					doomWait = move_speed[GetMoveSpeed() - 1];
+					SetDirection(d);
+				}
+				else {
+					Turn180Degree();
+					SetFacing(GetDirection());
+					doomWait = turn_speed[GetMoveSpeed() - 1];
+				}
 
 			}
 

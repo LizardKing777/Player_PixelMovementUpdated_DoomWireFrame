@@ -882,6 +882,9 @@ public:
 	static constexpr int GetDxFromDirection(int dir);
 	static constexpr int GetDyFromDirection(int dir);
 
+	/** Wait time for DOOM mode */
+	int doomWait = 0;
+
 protected:
 	explicit Game_Character(Type type, lcf::rpg::SaveMapEventBase* d);
 	/** Check for and fix incorrect data after loading save game */

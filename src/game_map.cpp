@@ -2037,3 +2037,39 @@ bool Game_Map::Parallax::FakeXPosition() {
 bool Game_Map::Parallax::FakeYPosition() {
 	return parallax_fake_y;
 }
+
+int Game_Map::GetTileID(int x, int y, int layer) {
+
+
+	int tile_index = x + y * GetTilesX();
+	int tile_raw_id = map->lower_layer[tile_index];
+	int tile_id = 0;
+
+	if (tile_raw_id >= BLOCK_E) {
+		tile_id = tile_raw_id - BLOCK_E;
+		tile_id = map_info.lower_tiles[tile_id] + BLOCK_E_INDEX;
+
+	}
+	else if (tile_raw_id >= BLOCK_D) {
+		/*tile_id = (tile_raw_id - BLOCK_D) / BLOCK_D_STRIDE + BLOCK_D_INDEX;
+		int autotile_id = (tile_raw_id - BLOCK_D) % BLOCK_D_STRIDE;
+		Output::Debug(" {} {} {}", tile_id, autotile_id, tile_raw_id);*/
+		//return tile_id;
+		/*if (((Passable::Wall) != 0) && (
+			(autotile_id >= 20 && autotile_id <= 23) ||
+			(autotile_id >= 33 && autotile_id <= 37) ||
+			autotile_id == 42 || autotile_id == 43 ||
+			autotile_id == 45 || autotile_id == 46))
+			return autotile_id;*/
+
+	}
+	else if (tile_raw_id >= BLOCK_C) {
+		tile_id = (tile_raw_id - BLOCK_C) / BLOCK_C_STRIDE + BLOCK_C_INDEX;
+
+	}
+	else if (map->lower_layer[tile_index] < BLOCK_C) {
+		tile_id = tile_raw_id / BLOCK_B_STRIDE;
+	}
+
+	return tile_id;
+}
