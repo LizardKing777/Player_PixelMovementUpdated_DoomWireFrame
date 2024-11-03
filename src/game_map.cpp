@@ -702,6 +702,13 @@ static bool WouldCollide(const Game_Character& self, const Game_Character& other
 	return false;
 }
 
+bool Game_Map::WouldCollideWithCharacter(const Game_Character& self, const Game_Character& other, bool self_conflict) { // TODO - PIXELMOVE
+	if (&self == &other) {
+		return false;
+	}
+	return WouldCollide(self, other, self_conflict);
+} // END - PIXELMOVE
+
 template <typename T>
 static void MakeWayUpdate(T& other) {
 	other.Update();

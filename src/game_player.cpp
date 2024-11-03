@@ -42,6 +42,7 @@
 #include <algorithm>
 #include <cmath>
 #include "scene_gameover.h"
+#include "cute_c2.h"
 
 Game_Player::Game_Player(): Game_PlayerBase(Player)
 {
@@ -59,6 +60,12 @@ void Game_Player::SetSaveData(lcf::rpg::SavePartyLocation save)
 	// RPG_RT will always reset the hero graphic on loading a save, even if
 	// a move route changed the graphic.
 	ResetGraphic();
+
+	if (true) { // TODO - PIXELMOVE
+		real_x = (float)GetX();
+		real_y = (float)GetY();
+	} // END - PIXELMOVE
+
 }
 
 lcf::rpg::SavePartyLocation Game_Player::GetSaveData() const {
@@ -133,6 +140,8 @@ void Game_Player::MoveTo(int map_id, int x, int y) {
 	SetTotalEncounterRate(0);
 	SetMenuCalling(false);
 
+	//UpdateScroll(1, 0); // TODO - PIXELMOVE
+
 	auto* vehicle = GetVehicle();
 	if (vehicle) {
 		// RPG_RT doesn't check the aboard flag for this one
@@ -160,8 +169,20 @@ void Game_Player::MoveTo(int map_id, int x, int y) {
 		// if you change maps during a jump
 		SetJumping(false);
 	} else {
+		/*
 		Game_Map::SetPositionX(GetSpriteX() - GetPanX());
 		Game_Map::SetPositionY(GetSpriteY() - GetPanY());
+		*/
+
+		if (true) { // TODO - PIXELMOVE
+			Game_Map::SetPositionX(real_x * SCREEN_TILE_SIZE - SCREEN_TILE_SIZE / 2 - GetPanX());
+			Game_Map::SetPositionY(real_y * SCREEN_TILE_SIZE + SCREEN_TILE_SIZE / 2 - GetPanY());
+		}
+		else {
+			Game_Map::SetPositionX(GetSpriteX() - GetPanX());
+			Game_Map::SetPositionY(GetSpriteY() - GetPanY());
+		} // END PIXELMOVE
+
 	}
 
 	ResetGraphic();
@@ -185,6 +206,16 @@ void Game_Player::MoveRouteSetSpriteGraphic(std::string sprite_name, int index) 
 }
 
 void Game_Player::UpdateScroll(int amount, bool was_jumping) {
+
+	if (true) { // TODO - PIXELMOVE
+
+		float dx = real_x * SCREEN_TILE_SIZE - Game_Map::GetPositionX() - (Player::screen_width / 2) * TILE_SIZE + SCREEN_TILE_SIZE / 2;
+		float dy = real_y * SCREEN_TILE_SIZE - Game_Map::GetPositionY() - (Player::screen_height / 2) * TILE_SIZE + SCREEN_TILE_SIZE;
+
+		Game_Map::Scroll(floor(dx), floor(dy));
+		return;
+	} // END - PIXELMOVE
+
 	if (IsPanLocked()) {
 		return;
 	}
@@ -305,6 +336,7 @@ void Game_Player::UpdateNextMovementAction() {
 	}
 
 	int move_dir = -1;
+	/*
 	switch (Input::dir4) {
 		case 2:
 			move_dir = Down;
@@ -319,6 +351,59 @@ void Game_Player::UpdateNextMovementAction() {
 			move_dir = Up;
 			break;
 	}
+	*/
+	if (true) { //TODO - PIXELMOVE
+
+		int dx = Input::IsPressed(Input::RIGHT) - Input::IsPressed(Input::LEFT);
+		int dy = Input::IsPressed(Input::DOWN) - Input::IsPressed(Input::UP);
+
+		int dir8 = 5 + dx - dy * 3;
+
+		switch (dir8) {
+		case 2:
+			move_dir = Down;
+			break;
+		case 4:
+			move_dir = Left;
+			break;
+		case 6:
+			move_dir = Right;
+			break;
+		case 8:
+			move_dir = Up;
+			break;
+		case 1:
+			move_dir = DownLeft;
+			break;
+		case 3:
+			move_dir = DownRight;
+			break;
+		case 7:
+			move_dir = UpLeft;
+			break;
+		case 9:
+			move_dir = UpRight;
+			break;
+		}
+	}
+	else {
+		switch (Input::dir4) {
+		case 2:
+			move_dir = Down;
+			break;
+		case 4:
+			move_dir = Left;
+			break;
+		case 6:
+			move_dir = Right;
+			break;
+		case 8:
+			move_dir = Up;
+			break;
+		}
+	}
+
+
 	if (move_dir >= 0) {
 		SetThrough((Player::debug_flag && Input::IsPressed(Input::DEBUG_THROUGH)) || data()->move_route_through);
 		Move(move_dir);
@@ -404,8 +489,24 @@ bool Game_Player::CheckActionEvent() {
 	}
 
 	bool result = false;
+	/*
 	int front_x = Game_Map::XwithDirection(GetX(), GetDirection());
 	int front_y = Game_Map::YwithDirection(GetY(), GetDirection());
+	*/
+
+	int front_x;  // TODO - PIXELMOVE
+	int front_y;
+
+	if (true) {
+		front_x = real_x * SCREEN_TILE_SIZE;
+		front_y = real_y * SCREEN_TILE_SIZE;
+		front_x = round(front_x + GetDxFromDirection(GetDirection()) * SCREEN_TILE_SIZE);
+		front_y = round(front_y + GetDyFromDirection(GetDirection()) * SCREEN_TILE_SIZE);
+	}
+	else {
+		front_x = Game_Map::XwithDirection(GetX(), GetDirection());
+		front_y = Game_Map::YwithDirection(GetY(), GetDirection());
+	} // END - PIXELMOVE
 
 	result |= CheckEventTriggerThere({lcf::rpg::EventPage::Trigger_touched, lcf::rpg::EventPage::Trigger_collision}, front_x, front_y, true);
 	result |= CheckEventTriggerHere({lcf::rpg::EventPage::Trigger_action}, true);
@@ -414,12 +515,29 @@ bool Game_Player::CheckActionEvent() {
 	bool got_action = CheckEventTriggerThere({lcf::rpg::EventPage::Trigger_action}, front_x, front_y, true);
 	// RPG_RT allows maximum of 3 counter tiles
 	for (int i = 0; !got_action && i < 3; ++i) {
+		/*
 		if (!Game_Map::IsCounter(front_x, front_y)) {
 			break;
 		}
 
 		front_x = Game_Map::XwithDirection(front_x, GetDirection());
 		front_y = Game_Map::YwithDirection(front_y, GetDirection());
+		*/
+
+		if (true) { // TODO - PIXELMOVE
+			if (!Game_Map::IsCounter(front_x / SCREEN_TILE_SIZE, front_y / SCREEN_TILE_SIZE)) {
+				break;
+			}
+			front_x = round(front_x + GetDxFromDirection(GetDirection()) * SCREEN_TILE_SIZE);
+			front_y = round(front_y + GetDyFromDirection(GetDirection()) * SCREEN_TILE_SIZE);
+		}
+		else {
+			if (!Game_Map::IsCounter(front_x, front_y)) {
+				break;
+			}
+			front_x = Game_Map::XwithDirection(front_x, GetDirection());
+			front_y = Game_Map::YwithDirection(front_y, GetDirection());
+		} // END PIXELMOVE
 
 		got_action |= CheckEventTriggerThere({lcf::rpg::EventPage::Trigger_action}, front_x, front_y, true);
 	}
@@ -433,6 +551,7 @@ bool Game_Player::CheckEventTriggerHere(TriggerSet triggers, bool triggered_by_d
 
 	bool result = false;
 
+	/*
 	for (auto& ev: Game_Map::GetEvents()) {
 		const auto trigger = ev.GetTrigger();
 		if (ev.IsActive()
@@ -445,6 +564,43 @@ bool Game_Player::CheckEventTriggerHere(TriggerSet triggers, bool triggered_by_d
 			result |= ev.ScheduleForegroundExecution(triggered_by_decision_key, true);
 		}
 	}
+}
+*/
+
+	if (true) {
+		c2Circle self;
+		c2Circle other;
+		self.p = c2V(((float)GetX() / (float)SCREEN_TILE_SIZE) + 0.5, ((float)GetY() / (float)SCREEN_TILE_SIZE) + 0.5);
+		self.r = 0.25 - Epsilon;
+		other.r = 0.5;
+		for (auto& ev : Game_Map::GetEvents()) {
+			const auto trigger = ev.GetTrigger();
+			other.p = c2V(ev.real_x + 0.5, ev.real_y + 0.5);
+			if (ev.IsActive()
+				&& ev.GetLayer() == lcf::rpg::EventPage::Layers_same
+				&& trigger >= 0
+				&& triggers[trigger]
+				&& c2CircletoCircle(self, other)) {
+				SetEncounterCalling(false);
+				result |= ev.ScheduleForegroundExecution(triggered_by_decision_key, true);
+			}
+		}
+	}
+	else {
+		for (auto& ev : Game_Map::GetEvents()) {
+			const auto trigger = ev.GetTrigger();
+			if (ev.IsActive()
+				&& ev.GetX() == GetX()
+				&& ev.GetY() == GetY()
+				&& ev.GetLayer() != lcf::rpg::EventPage::Layers_same
+				&& trigger >= 0
+				&& triggers[trigger]) {
+				SetEncounterCalling(false);
+				result |= ev.ScheduleForegroundExecution(triggered_by_decision_key, true);
+			}
+		}
+	} // END - PIXELMOVE
+
 	return result;
 }
 
@@ -480,6 +636,8 @@ void Game_Player::ResetGraphic() {
 
 	SetSpriteGraphic(ToString(actor->GetSpriteName()), actor->GetSpriteIndex());
 	SetTransparency(actor->GetSpriteTransparency());
+
+	Output::Debug("player.name: {}", GetSpriteName()); // TODO - PIXELMOVE
 }
 
 bool Game_Player::GetOnOffVehicle() {

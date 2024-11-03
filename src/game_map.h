@@ -78,6 +78,9 @@ private:
  * Game_Map namespace
  */
 namespace Game_Map {
+
+	bool WouldCollideWithCharacter(const Game_Character& self, const Game_Character& other, bool self_conflict); // TODO - PIXELMOVE
+
 	/**
 	 * Initialize Game_Map.
 	 */
