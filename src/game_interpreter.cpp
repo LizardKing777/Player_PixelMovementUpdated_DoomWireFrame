@@ -5215,7 +5215,10 @@ bool Game_Interpreter::CommandSetDoomMap(lcf::rpg::EventCommand const& com) {
 
 	int picID = ValueOrVariable(com.parameters[0], com.parameters[1]);
 
-	Main_Data::game_player->doomMoveType = com.parameters[2];
+	int moveType = 0;
+	if (com.parameters.size() >= 3)
+		moveType = com.parameters[2];
+	Main_Data::game_player->doomMoveType = moveType;
 	Main_Data::game_pictures->ShowDoomMap(picID);
 
 	return true;
