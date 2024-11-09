@@ -771,9 +771,9 @@ int TilemapLayer::GetTileDoom(int map_x, int map_y, int layer) {
 			col = pos.x;
 			row = pos.y;
 
-			return row * TILE_SIZE + col + 1000;
+			return row * TILE_SIZE + col + 5000;
 
-			return tile.ID + animation_step_ab * 1000;
+			//return tile.ID + animation_step_ab * 1000;
 
 		}
 		else {
@@ -784,6 +784,9 @@ int TilemapLayer::GetTileDoom(int map_x, int map_y, int layer) {
 
 			col = pos.x;
 			row = pos.y;
+
+
+			return row * TILE_SIZE + col + 2000;
 
 		}
 	}

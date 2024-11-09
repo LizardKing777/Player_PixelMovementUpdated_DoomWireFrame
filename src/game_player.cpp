@@ -395,7 +395,10 @@ void Game_Player::UpdateNextMovementAction() {
 		}
 		else {
 			Move(move_dir);
-
+			if (doomMoveType == 2) {
+				static const int move_speed[] = { 12, 10, 4, 3, 2, 1 };
+				doomWait = move_speed[GetMoveSpeed() - 1];
+			}
 			ResetThrough();
 			if (IsStopping()) {
 				int front_x = Game_Map::XwithDirection(GetX(), GetDirection());

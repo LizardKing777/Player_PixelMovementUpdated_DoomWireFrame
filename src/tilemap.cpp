@@ -117,3 +117,7 @@ BitmapRef Tilemap::GetTile(int x, int y, int layer) {
 int Tilemap::GetTileID(int x, int y, int layer) {
 	return layer_down.GetTileDoom(x, y, layer);
 }
+
+TilemapLayer* Tilemap::GetTilemap(int i) {
+	return &layer_down;
+}

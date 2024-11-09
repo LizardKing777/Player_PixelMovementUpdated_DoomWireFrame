@@ -71,6 +71,7 @@ public:
 
 	BitmapRef GetTile(int x, int y, int layer);
 	int GetTileID(int x, int y, int layer);
+	TilemapLayer* GetTilemap(int i);
 
 private:
 	TilemapLayer layer_down, layer_up;

@@ -53,6 +53,7 @@ public:
 	BitmapRef GetChipset();
 	BitmapRef GetTile(int x, int y, int layer);
 	int GetTileID(int x, int y, int layer);
+	TilemapLayer* GetTilemap(int i);
 
 private:
 	enum TeleportTransitionRule {

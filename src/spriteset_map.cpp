@@ -395,3 +395,7 @@ BitmapRef Spriteset_Map::GetTile(int x, int y, int layer) {
 int Spriteset_Map::GetTileID(int x, int y, int layer) {
 	return tilemap->GetTileID(x, y, layer);
 }
+
+TilemapLayer* Spriteset_Map::GetTilemap(int i) {
+	return tilemap->GetTilemap(i);
+}

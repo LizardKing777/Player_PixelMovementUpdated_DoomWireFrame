@@ -31,8 +31,10 @@ float Spriteset_MapDoom::castRay(float rayAngle, int& ray, std::vector<DrawingDo
 	float rayDirX = cos(rayAngle);
 	float rayDirY = sin(rayAngle);
 
-	int mapX = (int)(rayPosX / TILE_SIZE);
-	int mapY = (int)(rayPosY / TILE_SIZE);
+	int startX = (int)(rayPosX / TILE_SIZE);
+	int startY = (int)(rayPosY / TILE_SIZE);
+	int mapX = startX;
+	int mapY = startY;
 
 	float rayDistance = 0.0;
 	bool hit = false;
@@ -49,7 +51,7 @@ float Spriteset_MapDoom::castRay(float rayAngle, int& ray, std::vector<DrawingDo
 			auto event = Game_Map::GetEventAt(mapX, mapY, true);
 			if (event) {
 
-				if (event->GetName() != "[WALL]" && event->GetName() != "[WALL_D]") {
+				if (event->GetName() != "[WALL]" && event->GetName() != "[WALL_D]" && event->GetName() != "[WALL_S]") {
 					float distance = rayDistance;
 
 					DrawingDoom de = { 1, x, distance - 0.1f, (int)rayPosX % TILE_SIZE, event->GetId() };
@@ -76,12 +78,42 @@ float Spriteset_MapDoom::castRay(float rayAngle, int& ray, std::vector<DrawingDo
 					float distance = rayDistance;
 				/*	if (Main_Data::game_player->doomMoveType == 0)
 						distance *= cos(rayAngle - player.angle);*/
+					int rayD = (int)rayPosX % TILE_SIZE;
+					int tx = e.tileSprite;
 
-					DrawingDoom de = { 3, x, distance - 0.1f, (int)rayPosX % TILE_SIZE, e.id };
+					if (rayD == 0 || rayD == TILE_SIZE - 1)
+						rayD = (int)rayPosY % TILE_SIZE;
+
+					DrawingDoom de;
+
+					int type = 3;
+					if (e.type == 2) {
+						type = 4;
+						// if (!((int)rayPosX % TILE_SIZE == 8 || (int)rayPosY % TILE_SIZE == 8)) {
+						if (!(((int)rayPosX % TILE_SIZE >= 6 && (int)rayPosX % TILE_SIZE <= 10) || (int)rayPosY % TILE_SIZE >= 6 && (int)rayPosY % TILE_SIZE <= 10)) {
+							continue;
+						}
+						de = { type, x, distance - 0.1f, rayD, e.id, {tx,0} };
+
+						auto b = std::find_if(d.begin(),
+							d.end(),
+							[&d1 = de]
+							(const DrawingDoom& d2) -> bool { return d2.type == 4 && d1.evID == d2.evID; });
+
+
+						if (b != d.end()) {
+							continue;
+						}
+						distance -= 1.0f;
+					} else if(e.type == 3) {
+						type = 5;
+					}
+
+					de = { type, x, distance - 0.1f, rayD, e.id, {tx,0} };
 
 					d.push_back(de);
 
-					if (e.type == 0) {
+					if (e.type == 0 || e.type == 3) {
 						hit = true;
 						/*if (map[mapY][mapX] != 1)
 							rayDistance = -1;*/
@@ -90,7 +122,7 @@ float Spriteset_MapDoom::castRay(float rayAngle, int& ray, std::vector<DrawingDo
 			}
 
 		// Vérifier si le rayon touche un mur
-		if (map[mapY][mapX] == 1) {
+		if ((map[mapY][mapX] == 1 || map[mapY][mapX] == 2) && (mapX != startX || mapY != startY)) {
 			hit = true;
 		}
 		else if (hit == false) {
@@ -119,52 +151,122 @@ float Spriteset_MapDoom::castRay(float rayAngle, int& ray, std::vector<DrawingDo
 	return distance;  // Retourner la distance si un mur est touché
 }
 
-void Spriteset_MapDoom::renderTexturedFloor(float x1, float wallHeight, float rayAngle) {
-//	int start = Player::screen_height / 2 + wallHeight + 1;
-	int start = Player::screen_height / 2 - 1;
+float Spriteset_MapDoom::renderTexturedFloor(float x1, float wallHeight, float rayAngle) {
+	//int start = Player::screen_height / 2 + wallHeight + 1;
+	int start = Player::screen_height / 2 + 1;
 
 	// Calcul des directions cosinus et sinus en fonction de l'angle du rayon
 	float directionCos = std::cos(rayAngle);
 	float directionSin = std::sin(rayAngle);
 	float playerAngle = player.angle;
 
-	for (int y = start; y < Player::screen_height; y++) {
+	int lastMapX = -1;
+	int lastMapY = -1;
+
+	if (Input::IsTriggered(Input::DEBUG_THROUGH)) {
+		Output::Debug("---");
+	}
+	int y = 0;
+	float distance = 0;
+	float tilex, tiley;
+	int mapX;
+	int mapY;
+	BitmapRef texture;
+
+	const int inf = std::numeric_limits<int>::max();
+
+	//for (int y = start; y < Player::screen_height; y++) {
+	for (y = Player::screen_height; y >= start ; y--) {
 		// Créer et calculer la distance
-		float distance = static_cast<float>(Player::screen_height) / (2.0f * y - Player::screen_height);
+		distance = (Player::screen_height) / (2.0f * y - Player::screen_height);
+		if (distance < 0) {
+			distance = abs(distance);
+			//Output::Debug("NEG");
+		}
+		if (distance >= inf) {
+			//Output::Debug("inf - {}", distance);
+			distance = 120;
+			break;
+		}
 		//if (Main_Data::game_player->doomMoveType == 0)
 		//	distance = distance / cos(rayAngle - player.angle);
 
 		// Calcul de la position en tiles
-		float tilex = distance * directionCos;
-		float tiley = distance * directionSin;
+		tilex = distance * directionCos;
+		tiley = distance * directionSin;
 
 		// Ajouter la position du joueur pour obtenir la position dans le monde
-		tilex += player.x / 16;
-		tiley += player.y / 16;
+		tilex += player.x / TILE_SIZE;
+		tiley += player.y / TILE_SIZE;
 
 		// Obtenir la position du tile correspondant dans la carte
-		int mapX = static_cast<int>(std::floor(tilex));
-		int mapY = static_cast<int>(std::floor(tiley));
+		mapX = static_cast<int>(std::floor(tilex));
+		mapY = static_cast<int>(std::floor(tiley));
 
 		// Vérifier si la position du tile est valide dans la carte
 		if (mapX < 0 || mapY < 0 || mapX >= mapWidth() || mapY >= mapHeight()) {
-			continue;
+			break;
 		}
 
 		if (map[mapY][mapX] != 1) {
-			const BitmapRef texture = mapTexture(mapX, mapY);
 
-			// Définir les coordonnées de la texture
+			if (lastMapX != mapX || lastMapY != mapY) {
+				texture = mapTexture(mapX, mapY);
+				lastTile = texture;
+				lastMapX = mapX;
+				lastMapY = mapY;
+			}
+			else {
+				texture = lastTile;
+			}
+
 			int texture_x = static_cast<int>(std::floor(tilex * TILE_SIZE)) % TILE_SIZE;
 			int texture_y = static_cast<int>(std::floor(tiley * TILE_SIZE)) % TILE_SIZE;
 
+			// Définir les coordonnées de la texture
+
 			if (texture) {
 				Rect srcRect = { texture_x, texture_y, 1, 1 };
-
+				//if (distance > 8) {
+				//	y--;
+				//	srcRect.width++;
+				//	srcRect.height++;
+				//}
 				sprite->BlitFast(x1, y, *texture, srcRect, 255);
+
+				if (distance > 5) {
+					// y -= 32;
+					// srcRect = { (texture_x+1)%16, texture_y, 1, 1 };
+					// sprite->BlitFast(x1 + 1, y, *texture, srcRect, 255);
+				}
 			}
+			//if (distance > 3) {
+			//	//y -= 96;
+			//	y--;
+			//	if (Input::IsTriggered(Input::DEBUG_THROUGH)) {
+			//		Output::Debug(" .");
+			//	}
+			//	//Output::Debug("QSd {}", distance);
+			//	//break;
+			//	if (distance > 4) {
+			//		y--;
+			//		if (Input::IsTriggered(Input::DEBUG_THROUGH)) {
+			//			Output::Debug(" ..");
+			//		}
+			//	}
+			//}
 		}
+		else {
+			break;
+		}
+		
 	}
+
+	if (Input::IsTriggered(Input::DEBUG_THROUGH)) {
+		Output::Debug(" {} {}", y, distance);
+	}
+
+	return distance;
 }
 
 // Fonction pour dessiner la scène en utilisant les fonctions de Spriteset_MapDoom
@@ -174,6 +276,8 @@ void Spriteset_MapDoom::renderScene() {
 
 	float FOV = player.fov;
 	std::vector<DrawingDoom> drawings = {};
+
+	bool drawFloor = true;
 
 	for (int x = 0; x < Player::screen_width; x++) {
 		// Calculer l'angle du rayon
@@ -187,10 +291,24 @@ void Spriteset_MapDoom::renderScene() {
 		float distance = castRay(rayAngle, ray, drawings, x, mx, my);
 
 		if (distance >= 0) {
-			renderTexturedFloor(x, distance, rayAngle);
+			if (drawFloor) {
+				float df = renderTexturedFloor(x, distance, rayAngle);
+				if (df > 3) {
+					//drawFloor = false;
+					//x++;
+					//renderTexturedFloor(x, distance, rayAngle);
+
+					//d = { 0, x, distance, ray, 0, {mx, my} };
+					//drawings.push_back(d);
+				}
+			}
+			else {
+				drawFloor = true;
+			}
 
 			DrawingDoom d = { 0, x, distance, ray, 0, {mx, my} };
 			drawings.push_back(d);
+			
 		}
 
 	}
@@ -255,12 +373,15 @@ void Spriteset_MapDoom::renderScene() {
 
 			}
 		}
-		else if (d.type == 0 || d.type == 3) {
+		else if (d.type == 0 || d.type == 3 || d.type == 5) {
 			float distance = d.distance;
 
-			//Output::Debug(" {}", distance);
-
-			if (distance > 0) {
+			// Output::Debug(" {}", map[d.position.x][d.position.y]);
+			bool b = true;
+			if (d.position.y >= 0 && d.position.y < mapHeight() && d.position.x >= 0 && d.position.x < mapWidth())
+				if (map[d.position.y][d.position.x] == 2)
+					b = false;
+			if (distance > 0 && b) {
 				int lineHeight = static_cast<int>(TILE_SIZE * Player::screen_height * 1.1 / distance);
 				int drawStart = (Player::screen_height - lineHeight) / 2;
 				int drawEnd = drawStart + lineHeight;
@@ -269,8 +390,9 @@ void Spriteset_MapDoom::renderScene() {
 
 				Rect r = Rect(d.x, drawStart, 1, drawEnd - drawStart);
 				BitmapRef texture;
-				if (d.type == 3)
-					texture = ((Scene_Map*) scene_map)->GetEventSprite(d.evID);
+				if (d.type == 3 || d.type == 5) {
+					texture = ((Scene_Map*)scene_map)->GetEventSprite(d.evID);
+				}
 				else
 					texture = mapTexture(d.position.x, d.position.y);
 
@@ -278,17 +400,46 @@ void Spriteset_MapDoom::renderScene() {
 					Rect srcRect;
 
 					if (d.type == 3) {
-						srcRect = { texture->width() - textureX - 5, 0, 1, texture->height() };
+						if (d.position.x == 1) {
+							srcRect = { texture->width() - textureX - 9, 0, 1, TILE_SIZE};
+						}
+						else {
+							srcRect = { texture->width() - textureX - 5, 0, 1, texture->height() };
+						}
+					}
+					else if (d.type == 5) {
+						//if (textureX % 2 == 1)
+						{
+							//Output::Debug(" {}", textureX);
+							float w = (float)(texture->width()) / TILE_SIZE;
+							int ww = (int)(ceil(w));
+						
+							int tx = textureX * 100 / (TILE_SIZE - 1) * (texture->width() - 1) / 100;
+							float scaleFactor = static_cast<float>(texture->width()) / 16.0f;
+							if (scaleFactor < 0)
+								scaleFactor = 1;
+
+							// Calcul précis de texX
+							float texX_float = textureX * scaleFactor;
+							tx = static_cast<int>(texX_float);
+
+
+							srcRect = { tx, 0, 1,  texture->height() };
+							//r.width = ww;
+						}
+						/*else
+							srcRect = { 0,0,0,0 };*/
 					}
 					else
 						srcRect = { textureX, 0, 1, texture->height() };
 
-					sprite->StretchBlit(r, *texture, srcRect, 255);
+					if (srcRect.width != 0 && srcRect.height != 0)
+						sprite->StretchBlit(r, *texture, srcRect, 255);
 				}
 
 			}
 		}
-		else if (d.type == 1) {
+		else if (d.type == 1 || d.type == 4) {
 			float distance = d.distance;
 
 			// Output::Debug(" {} {}", d.evID, d.distance);
@@ -394,6 +545,8 @@ float Spriteset_MapDoom::castRay7() {
 }
 void Spriteset_MapDoom::renderMode7() {
 
+	std::vector<DrawingDoom> drawings = {};
+
 	float x2 = 1;
 	float y2 = 1;
 	float z = 1;
@@ -442,7 +595,40 @@ void Spriteset_MapDoom::renderMode7() {
 			mapY = y2 / TILE_SIZE;
 
 			//Output::Debug("{} {}", mapX, mapY);
+			if (Game_Map::LoopHorizontal()) {
+				if (mapX<0)
+					mapX = mapWidth() * TILE_SIZE - abs(mapX) % mapWidth();
+			}
+			if (Game_Map::LoopVertical()) {
+				if (mapY < 0)
+					mapY = mapHeight() * TILE_SIZE - abs(mapY) % mapHeight();
+			}
+
 			if (mapX >= 0 && mapX < mapWidth() && mapY >= 0 && mapY < mapHeight()) {
+
+				if (mx == 8 && my == 8) {
+					auto event = Game_Map::GetEventAt(mapX, mapY, true);
+					if (event) {
+
+						if (event->GetName() != "[WALL]" && event->GetName() != "[WALL_D]") {
+							float distance = 0.01f;
+							
+							DrawingDoom de = { 1, x, distance, 0, event->GetId(), {mapX, mapY} };
+
+							auto b = std::find_if(drawings.begin(),
+								drawings.end(),
+								[&d1 = de]
+								(const DrawingDoom& d2) -> bool { return d2.type == 1 && d1.evID == d2.evID; });
+
+
+							if (b == drawings.end()) {
+								drawings.push_back(de);
+							}
+						}
+
+					}
+				}
+
 				BitmapRef texture = mapTexture(mapX, mapY);
 
 				if (texture) {
@@ -451,7 +637,7 @@ void Spriteset_MapDoom::renderMode7() {
 				}
 
 
-				//// Paramètres pour la position du personnage (en coordonnées de tuile)
+				/*//// Paramètres pour la position du personnage (en coordonnées de tuile)
 				//float characterTileX = Main_Data::game_player->GetX();  // Position X du personnage en tiles
 				//float characterTileY = Main_Data::game_player->GetY();   // Position Y du personnage en tiles
 
@@ -490,14 +676,92 @@ void Spriteset_MapDoom::renderMode7() {
 
 				//		sprite->StretchBlit(dstRect, *characterTexture, srcRect, 255);
 				//	}
-				//}
+				//}*/
 			}
 		}
 
 		z++;
 	}
 
-	////// Ajout du dessin du personnage avec zoom proportionnel
+	for (auto d : drawings) {
+
+		if (d.type == 2) {
+			float distance = d.distance;
+
+			//Output::Debug(" {}", distance);
+
+			if (distance > 0) {
+
+				
+
+			}
+		}
+		else if (d.type == 0 || d.type == 3) {
+			float distance = d.distance;
+
+			//Output::Debug(" {}", distance);
+
+			if (distance > 0) {
+				int lineHeight = static_cast<int>(TILE_SIZE * Player::screen_height * 1.1 / distance);
+				int drawStart = (Player::screen_height - lineHeight) / 2;
+				int drawEnd = drawStart + lineHeight;
+
+				int textureX = d.textureX;
+
+				Rect r = Rect(d.x, drawStart, 1, drawEnd - drawStart);
+				BitmapRef texture;
+				if (d.type == 3)
+					texture = ((Scene_Map*)scene_map)->GetEventSprite(d.evID);
+				else
+					texture = mapTexture(d.position.x, d.position.y);
+
+				if (texture) {
+					Rect srcRect;
+
+					if (d.type == 3) {
+						srcRect = { texture->width() - textureX - 5, 0, 1, texture->height() };
+					}
+					else
+						srcRect = { textureX, 0, 1, texture->height() };
+
+					sprite->StretchBlit(r, *texture, srcRect, 255);
+				}
+
+			}
+		}
+		else if (d.type == 1) {
+			float distance = d.distance;
+
+			// Output::Debug(" {} {}", d.evID, d.distance);
+
+			if (distance > 0) {
+
+				BitmapRef texture = bitmap;
+				texture = ((Scene_Map*)scene_map)->GetEventSprite(d.evID);
+
+				if (texture) {
+
+					int lineHeight = static_cast<int>(TILE_SIZE * Player::screen_height / distance);
+					int drawStart = (Player::screen_height - lineHeight) / 2;
+					int textureX = d.textureX;
+
+					float d5 = (float)lineHeight / Player::screen_height;
+					int zx = d5 * 6 * texture->width();
+					int zy = d5 * 6 * texture->height();
+
+					Rect srcRect = { 0, 0, texture->width(), texture->height() };
+					float sprCorrection = 4;
+					if (Game_Map::GetEvent(d.evID)->HasTileSprite())
+						sprCorrection = 1.2f;
+					Rect r = Rect(d.x - zx / 2, drawStart + zy / sprCorrection, zx, zy);
+					sprite->StretchBlit(r, *texture, srcRect, 255);
+				}
+			}
+		}
+	}
+	drawings.clear();
+
+	/*//// Ajout du dessin du personnage avec zoom proportionnel
 	////// Récupérer la position du personnage en coordonnées de tile
 	////float playerTileX = Main_Data::game_player->GetX();
 	////float playerTileY = Main_Data::game_player->GetY();
@@ -528,7 +792,7 @@ void Spriteset_MapDoom::renderMode7() {
 
 	////	// Dessiner le sprite du personnage avec zoom
 	////	sprite->StretchBlit(playerDestRect, *playerTexture, playerSrcRect, 255);
-	////}
+	////}*/
 
 
 	BitmapRef texture = bitmap;
@@ -548,17 +812,9 @@ void Spriteset_MapDoom::renderMode7() {
 
 BitmapRef Spriteset_MapDoom::mapTexture(int x, int y) {
 	if (x >= 0 && y >= 0 && x < mapWidth() && y < mapHeight()) {
-		//if (!mapTextures[x][y]) {
-		//	Scene_Map* scene = (Scene_Map*)Scene::Find(Scene::Map).get();
-		//	mapTextures[x][y] = scene->GetTile(x, y, 0);
-		//	return mapTextures[x][y];
-		//}
-		//return mapTextures[x][y];
-
-		//int id = Game_Map::GetTileID(x, y, 0);
-		int id = ((Scene_Map*)scene_map)->GetTileID(x, y, 0);
+		//int id = ((Scene_Map*)scene_map)->GetTileID(x, y, 0);
+		int id = tilemapDown->GetTileDoom(x, y, 0);
 		if (!mapTexturesID[id]) {
-
 			mapTexturesID[id] = ((Scene_Map*)scene_map)->GetTile(x, y, 0);
 			return mapTexturesID[id];
 		}
@@ -635,6 +891,8 @@ Spriteset_MapDoom::Spriteset_MapDoom() {
 	scene_map = Scene::Find(Scene::Map).get();
 	chipset = ((Scene_Map*)scene_map)->GetChipset();
 
+	tilemapDown = ((Scene_Map*)scene_map)->GetTilemap(0);
+
 	doomMap = true;
 
 	mapW = Game_Map::GetTilesX();
@@ -676,12 +934,18 @@ Spriteset_MapDoom::Spriteset_MapDoom() {
 	for (int i = 0;i <= Game_Map::GetHighestEventId();i++) {
 		auto e = Game_Map::GetEvent(i);
 		if (e) {
-			if (e->GetName() == "[WALL]" || e->GetName() == "[WALL_D]") {
+			if (e->GetName() == "[WALL]" || e->GetName() == "[WALL_D]" || e->GetName() == "[WALL_S]") {
 				int t = 0;
 				if (e->GetName() == "[WALL_D]")
 					t = 1;
+				if (e->GetName() == "[WALL_S]")
+					t = 3;
 
-				EventWall p = { e->GetX(), e->GetY(), e->GetId(), t };
+				int tileSprite = 0;
+				if (e->HasTileSprite())
+					tileSprite = 1;
+
+				EventWall p = { e->GetX(), e->GetY(), e->GetId(), t, tileSprite };
 				events_wall.push_back(p);
 			}
 		}
@@ -970,14 +1234,49 @@ void Spriteset_MapDoom::Update(bool first) {
 
 			float x = Main_Data::game_player->GetX() * TILE_SIZE + TILE_SIZE / 2;
 			float y = Main_Data::game_player->GetY() * TILE_SIZE + TILE_SIZE / 2;
-			//float y = Main_Data::game_player->GetY() * TILE_SIZE + TILE_SIZE / 2 + scaleX * 2;
 
-			if (x != player.x || y != player.y) {
+			if (Main_Data::game_player->doomWait != 0) {
+				if (x != player7.x || y != player7.y) {
+
+					float dx = (x - player7.x) / Main_Data::game_player->doomWait;
+					float dy = (y - player7.y) / Main_Data::game_player->doomWait;
+
+					if (dx != 0)
+						player7.x += dx;
+					if (dy != 0)
+						player7.y += dy;
+
+					player.x = (mapWidth()) * TILE_SIZE - player7.x;
+					player.y = player7.y + Player::screen_height * 3 / 4;
+				}
+			}
+			else {
+				float x = Main_Data::game_player->GetX() * TILE_SIZE + TILE_SIZE / 2;
+				float y = Main_Data::game_player->GetY() * TILE_SIZE + TILE_SIZE / 2;
+				//float y = Main_Data::game_player->GetY() * TILE_SIZE + TILE_SIZE / 2 + scaleX * 2;
+
+				if (x != player.x || y != player.y) {
 
 					player.x = mapWidth() * TILE_SIZE - x;
 					player.y = y + Player::screen_height * 3 / 4;
 
+					player7.x = x;
+					player7.y = y;
+
+				}
 			}
+			
+
+			//float x = Main_Data::game_player->GetX() * TILE_SIZE + TILE_SIZE / 2;
+			//float y = Main_Data::game_player->GetY() * TILE_SIZE + TILE_SIZE / 2;
+			////float y = Main_Data::game_player->GetY() * TILE_SIZE + TILE_SIZE / 2 + scaleX * 2;
+
+			//if (x != player.x || y != player.y) {
+
+			//		player.x = mapWidth() * TILE_SIZE - x;
+			//		player.y = y + Player::screen_height * 3 / 4;
+
+			//}
 
 			if (Input::IsPressed(Input::DIVIDE)) {  // Tourner à gauche
 				player.angle -= angle;
@@ -1064,6 +1363,7 @@ void Spriteset_MapDoom::Update(bool first) {
 				}
 				// Output::Debug("l {} {} {}", player.angle, a, angle);
 			}
+
 		} else { // Pixel Movement
 			if (Main_Data::game_player->canMove) {
 				if (Input::IsPressed(Input::UP)) {  // Avancer
