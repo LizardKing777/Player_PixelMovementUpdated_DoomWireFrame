@@ -40,18 +40,6 @@ Game_CommonEvent::Game_CommonEvent(int common_event_id) :
 
 }
 
-void Game_CommonEvent::ForceCreate(int ce_ID) {
-	auto* ce = lcf::ReaderUtil::GetElement(lcf::Data::commonevents, ce_ID);
-
-	if ((ce->trigger == lcf::rpg::EventPage::Trigger_parallel || ce->ID == ManiacsBattle::Get_ATBCE() || ce->ID == ManiacsBattle::Get_TargetCE() ||
-		ce->ID == ManiacsBattle::Get_DamageCE() || ce->ID == ManiacsBattle::Get_StateCE() || ce->ID == ManiacsBattle::Get_StatsCE())
-		&& !ce->event_commands.empty())
-	{
-		interpreter.reset(new Game_Interpreter_Map());
-		interpreter->Push(this);
-	}
-}
-
 void Game_CommonEvent::SetSaveData(const lcf::rpg::SaveEventExecState& data) {
 	// RPG_RT Savegames have empty stacks for parallel events.
 	// We are LSD compatible but don't load these into interpreter.
@@ -80,11 +68,35 @@ AsyncOp Game_CommonEvent::Update(bool resume_async) {
 void Game_CommonEvent::ForceCreate(int ce_ID) {
 	auto* ce = lcf::ReaderUtil::GetElement(lcf::Data::commonevents, ce_ID);
 
+	if ((ce->trigger == lcf::rpg::EventPage::Trigger_parallel || ce->ID == ManiacsBattle::Get_ATBCE() || ce->ID == ManiacsBattle::Get_TargetCE() ||
+		ce->ID == ManiacsBattle::Get_DamageCE() || ce->ID == ManiacsBattle::Get_StateCE() || ce->ID == ManiacsBattle::Get_StatsCE())
+		&& !ce->event_commands.empty())
 	{
-		if (!interpreter)
-			interpreter.reset(new Game_Interpreter_Map());
+		interpreter.reset(new Game_Interpreter_Map());
 		interpreter->Push(this);
 	}
+}
+void Game_CommonEvent::ForceCreateNoCheck(int ce_ID) {
+	auto* ce = lcf::ReaderUtil::GetElement(lcf::Data::commonevents, ce_ID);
+
+	
+	{
+		interpreter.reset(new Game_Interpreter_Map());
+		interpreter->Push(this);
+	}
+}
+AsyncOp Game_CommonEvent::ForceUpdate(bool resume_async) {
+	if (interpreter) {
+		assert(interpreter->IsRunning());
+		interpreter->Update(!resume_async);
+
+		// Suspend due to async op ...
+		if (interpreter->IsAsyncPending()) {
+			return interpreter->GetAsyncOp();
+		}
+	}
+
+	return {};
 }
 
 AsyncOp Game_CommonEvent::UpdateBattle(bool resume_async, int ce_ID) {

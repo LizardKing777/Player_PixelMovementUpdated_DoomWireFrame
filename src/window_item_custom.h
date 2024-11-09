@@ -32,7 +32,7 @@ public:
 	/**
 	 * Constructor.
 	 */
-	Window_Item_Custom(int ix, int iy, int iwidth, int iheight);
+	Window_Item_Custom(Scene* parent, int ix, int iy, int iwidth, int iheight);
 
 	void Refresh() override;
 

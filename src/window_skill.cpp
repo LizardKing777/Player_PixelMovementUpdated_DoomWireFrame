@@ -172,7 +172,7 @@ void Window_BattleSkillCustom::DrawItem(int index) {
 
 
 				Game_Battle::GetInterpreter().Push(common_event);
-				common_event->ForceCreate(eventID);
+				common_event->ForceCreateNoCheck(eventID);
 				common_event->ForceUpdate(false);
 
 				std::string str_VarId = std::to_string(stringVarID);

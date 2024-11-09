@@ -30,7 +30,7 @@ public:
 	/**
 	 * Constructor.
 	 */
-	Window_Custom(int ix, int iy, int iwidth, int iheight, std::string t);
+	Window_Custom(Scene* parent, int ix, int iy, int iwidth, int iheight, std::string t);
 
 	std::string name;
 

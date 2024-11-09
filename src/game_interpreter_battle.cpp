@@ -189,8 +189,6 @@ bool Game_Interpreter_Battle::ExecuteCommand(lcf::rpg::EventCommand const& com) 
 			return CommandCallCommonEvent(com);
 		case Cmd::ForceFlee:
 			return CommandForceFlee(com);
-		case Cmd::EnableCombo:
-			return CommandEnableCombo(com);
 		case Cmd::ChangeMonsterHP:
 			return CommandChangeMonsterHP(com);
 		case Cmd::ChangeMonsterMP:
@@ -297,31 +295,7 @@ bool Game_Interpreter_Battle::CommandForceFlee(lcf::rpg::EventCommand const& com
 	return true;
 }
 
-bool Game_Interpreter_Battle::CommandEnableCombo(lcf::rpg::EventCommand const& com) {
-	if (!Player::IsRPG2k3Commands()) {
-		return true;
-	}
 
-	int actor_id = com.parameters[0];
-
-	if (!Main_Data::game_party->IsActorInParty(actor_id)) {
-		return true;
-	}
-
-	int command_id = com.parameters[1];
-	int multiple = com.parameters[2];
-
-	Game_Actor* actor = Main_Data::game_actors->GetActor(actor_id);
-
-	if (!actor) {
-		Output::Warning("EnableCombo: Invalid actor ID {}", actor_id);
-		return true;
-	}
-
-	actor->SetBattleCombo(command_id, multiple);
-
-	return true;
-}
 
 bool Game_Interpreter_Battle::CommandChangeMonsterHP(lcf::rpg::EventCommand const& com) {
 	auto* enemy = Main_Data::game_enemyparty->GetEnemy(com.parameters[0]);

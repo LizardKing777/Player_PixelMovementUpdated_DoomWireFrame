@@ -291,13 +291,29 @@ void Scene_Battle::CreateUi() {
 
 		}
 
+		win_name = "Help";
+		it2 = CustomBattle::customWindows.find(win_name);
+
+		if (it2 != CustomBattle::customWindows.end()) {
+
+			help_window->SetX(CustomBattle::customWindows[win_name].x);
+			help_window->SetY(CustomBattle::customWindows[win_name].y);
+			help_window->SetWidth(CustomBattle::customWindows[win_name].w);
+			help_window->SetHeight(CustomBattle::customWindows[win_name].h);
+			help_window->SetOpacity(CustomBattle::customWindows[win_name].opacity);
+			help_window->SetBackOpacity(CustomBattle::customWindows[win_name].opacity);
+
+			help_window->SetVisible(!CustomBattle::customWindows[win_name].hide);
+
+		}
+
 		win_name = "Skills";
 		it2 = CustomBattle::customWindows.find(win_name);
 		
 
 		if (it2 != CustomBattle::customWindows.end()) {
 
-			skill_window.reset(new Window_BattleSkillCustom(Player::menu_offset_x, (Player::menu_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
+			skill_window.reset(new Window_BattleSkillCustom(this, Player::menu_offset_x, (Player::menu_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
 
 			skill_window->SetX(CustomBattle::customWindows[win_name].x);
 			skill_window->SetY(CustomBattle::customWindows[win_name].y);
@@ -315,7 +331,7 @@ void Scene_Battle::CreateUi() {
 	}
 	else {
 
-		skill_window.reset(new Window_BattleSkill(Player::menu_offset_x, (Player::menu_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
+		skill_window.reset(new Window_BattleSkill(this, Player::menu_offset_x, (Player::menu_offset_y + MENU_HEIGHT - 80), MENU_WIDTH, 80));
 
 		skill_window->SetHelpWindow(help_window.get());
 	}

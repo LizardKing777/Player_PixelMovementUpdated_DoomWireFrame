@@ -651,9 +651,9 @@ void Scene_Battle_Rpg2k3::CreateBattleStatusWindow() {
 
 		Window_BattleStatus* win;
 		if (CustomBattle::customWindows["Status"].stats.size() > 0)
-			win = new Window_BattleStatusCustom(x, y, w, h);
+			win = new Window_BattleStatusCustom(this, x, y, w, h);
 		else
-			win = new Window_BattleStatus(x, y, w, h);
+			win = new Window_BattleStatus(this, x, y, w, h);
 
 		win->SetOpacity(CustomBattle::customWindows[win_name].opacity);
 		win->SetBackOpacity(CustomBattle::customWindows[win_name].opacity);
@@ -667,7 +667,7 @@ void Scene_Battle_Rpg2k3::CreateBattleStatusWindow() {
 		status_window.reset(win);
 	}
 	else {
-		status_window.reset(new Window_BattleStatus(x, y, w, h));
+		status_window.reset(new Window_BattleStatus(this, x, y, w, h));
 	}
 	status_window->SetZ(Priority_Window + 1);
 }
@@ -710,14 +710,14 @@ void Scene_Battle_Rpg2k3::CreateBattleCommandWindow() {
 		auto it2 = CustomBattle::customWindows.find(win_name);
 
 		if (it2 != CustomBattle::customWindows.end()) {
-			command_window.reset(new Window_Command_Custom(std::move(commands), option_command_mov, CustomBattle::customWindows[win_name].column));
+			command_window.reset(new Window_Command_Custom(this, std::move(commands), option_command_mov, CustomBattle::customWindows[win_name].column));
 		}
 		else {
-			command_window.reset(new Window_Command(std::move(commands), option_command_mov));
+			command_window.reset(new Window_Command(this, std::move(commands), option_command_mov));
 		}
 	}
 	else {
-		command_window.reset(new Window_Command(std::move(commands), option_command_mov));
+		command_window.reset(new Window_Command(this, std::move(commands), option_command_mov));
 	}
 
 	SetBattleCommandsDisable(*command_window, actor);
@@ -1378,7 +1378,7 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionAc
 		status_window->SetVisible(true);
 		command_window->SetIndex(-1);
 
-		if (lcf::Data::battlecommands.battle_type == lcf::rpg::BattleCommands::BattleType_traditional) {
+		if (lcf::Data::battlecommands.battle_type == lcf::rpg::BattleCommands::BattleType_traditional || ManiacsBattle::GetForceSelectingActor()) {
 			status_window->SetChoiceMode(Window_BattleStatus::ChoiceMode_None);
 			target_window->SetVisible(true);
 
@@ -1448,7 +1448,7 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionAc
 	}
 
 	if (scene_action_substate == eWaitActor) {
-		if (lcf::Data::battlecommands.battle_type == lcf::rpg::BattleCommands::BattleType_traditional) {
+		if (lcf::Data::battlecommands.battle_type == lcf::rpg::BattleCommands::BattleType_traditional || ManiacsBattle::GetForceSelectingActor()) {
 			UpdateReadyActors();
 			SetActiveActor(GetNextReadyActor());
 		}
@@ -1906,8 +1906,8 @@ Scene_Battle_Rpg2k3::SceneActionReturn Scene_Battle_Rpg2k3::ProcessSceneActionAl
 
 		if (Input::GetUseMouseButton()) {
 
-			bool actorHover = status_window->UpdateMouse(false);
-
+			//bool actorHover = status_window->UpdateMouse(false);
+			bool actorHover = false;
 			if (!actorHover) {
 				Point mouseP = Input::GetMousePosition();
 				if (!(mouseP.x >= status_window->GetX() + status_window->GetBorderX() && mouseP.x < status_window->GetX() + status_window->GetBorderX() + status_window->GetWidth() &&

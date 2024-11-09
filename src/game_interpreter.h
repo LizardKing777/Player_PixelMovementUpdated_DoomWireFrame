@@ -295,7 +295,8 @@ protected:
 	bool CommandForceSelectingActor(lcf::rpg::EventCommand const& com);
 	bool CommandShowStringPicSelectable(lcf::rpg::EventCommand const& com);
 	bool CommandManiacControlMessage(lcf::rpg::EventCommand const& com);
-	
+	bool CommandEnableCombo(lcf::rpg::EventCommand const& com);
+
 	void tokenize(std::string const& str, const char delim, std::vector<std::string>& out);
 	void tokenizeRegex(std::string const& str, const char delim, std::vector<std::string>& out);
 

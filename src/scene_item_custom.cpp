@@ -73,10 +73,10 @@ void Scene_Item_Custom::Start() {
 		y = CustomItem::customWindows[win_name].y;
 		w = CustomItem::customWindows[win_name].w;
 
-		help_window.reset(new Window_Help(x, y, w, menu_help_height));
+		help_window.reset(new Window_Help(this, x, y, w, menu_help_height));
 	}
 	else {
-		help_window.reset(new Window_Help(Player::menu_offset_x, Player::menu_offset_y, MENU_WIDTH, menu_help_height));
+		help_window.reset(new Window_Help(this, Player::menu_offset_x, Player::menu_offset_y, MENU_WIDTH, menu_help_height));
 	}
 
 	win_name = "Items";
@@ -93,14 +93,14 @@ void Scene_Item_Custom::Start() {
 		w = CustomItem::customWindows[win_name].w;
 		h = CustomItem::customWindows[win_name].h;
 
-		item_window.reset(new Window_Item_Custom(x,y,w,h));
+		item_window.reset(new Window_Item_Custom(this, x,y,w,h));
 		item_window->SetHelpWindow(help_window.get());
 		item_window->SetColumnMax(CustomItem::customWindows[win_name].column);
 		item_window->Refresh();
 		item_window->SetIndex(item_index);
 	}
 	else {
-		item_window.reset(new Window_Item(Player::menu_offset_x, Player::menu_offset_y + menu_help_height, MENU_WIDTH, MENU_HEIGHT - menu_help_height));
+		item_window.reset(new Window_Item(this, Player::menu_offset_x, Player::menu_offset_y + menu_help_height, MENU_WIDTH, MENU_HEIGHT - menu_help_height));
 		item_window->SetHelpWindow(help_window.get());
 		item_window->Refresh();
 		item_window->SetIndex(item_index);
@@ -178,7 +178,7 @@ void Scene_Item_Custom::Start() {
 		if (options.size() == 0)
 			options.push_back("All");
 
-		pocket_window.reset(new Window_Command_Custom(options, w, CustomItem::customWindows[win_name].column));
+		pocket_window.reset(new Window_Command_Custom(this, options, w, CustomItem::customWindows[win_name].column));
 		pocket_window->SetX(x);
 		pocket_window->SetY(y);
 		pocket_window->SetHeight(h);
@@ -233,7 +233,7 @@ void Scene_Item_Custom::vUpdate() {
 			Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Cancel));
 			Scene::Pop();
 		}
-		else if (Input::IsTriggered(Input::DECISION)) {
+		else if (Input::IsTriggered(Input::DECISION) && pocket_window->GetIndex() >= 0) {
 			Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
 			pocket_window->SetActive(false);
 			item_window->SetActive(true);

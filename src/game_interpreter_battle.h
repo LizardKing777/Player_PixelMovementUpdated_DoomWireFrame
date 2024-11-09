@@ -66,7 +66,6 @@ public:
 private:
 	bool CommandCallCommonEvent(lcf::rpg::EventCommand const& com);
 	bool CommandForceFlee(lcf::rpg::EventCommand const& com);
-	bool CommandEnableCombo(lcf::rpg::EventCommand const& com);
 	bool CommandChangeMonsterHP(lcf::rpg::EventCommand const& com);
 	bool CommandChangeMonsterMP(lcf::rpg::EventCommand const& com);
 	bool CommandChangeMonsterCondition(lcf::rpg::EventCommand const& com);

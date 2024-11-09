@@ -351,6 +351,8 @@ void Window_Base::DrawCustomGauge(const Game_Battler& actor, int type, int act, 
 	}
 
 	bool full = act == max;
+	if (max == 0)
+		max = 1;
 
 	// Which gauge (0 - 2)
 	int gauge_y = 32 + type * 16;

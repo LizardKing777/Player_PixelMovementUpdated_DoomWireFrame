@@ -25,8 +25,8 @@
 #include "scene_menu_custom.h"
 #include "game_strings.h"
 
-Window_MenuStatus_Custom::Window_MenuStatus_Custom(int ix, int iy, int iwidth, int iheight) :
-	Window_MenuStatus(ix, iy, iwidth, iheight) {
+Window_MenuStatus_Custom::Window_MenuStatus_Custom(Scene* parent, int ix, int iy, int iwidth, int iheight) :
+	Window_MenuStatus(parent, ix, iy, iwidth, iheight) {
 
 	if (Player::IsRPG2k3()) {
 		SetContents(Bitmap::Create(width - 12, height - 16));

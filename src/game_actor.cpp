@@ -255,7 +255,7 @@ bool Game_Actor::IsSkillUsable(int skill_id) const {
 			else
 				Game_Map::GetInterpreter().Push(common_event);
 
-			common_event->ForceCreate(eventID);
+			common_event->ForceCreateNoCheck(eventID);
 			common_event->ForceUpdate(false);
 
 		}

@@ -32,8 +32,8 @@ static int CalculateWidth(const std::vector<std::string>& commands, int width) {
 	return width;
 }
 
-Window_Command_Custom::Window_Command_Custom(std::vector<std::string> in_commands, int width, int c) :
-	Window_Command(in_commands, -1)
+Window_Command_Custom::Window_Command_Custom(Scene* parent, std::vector<std::string> in_commands, int width, int c) :
+	Window_Command(parent, in_commands, -1)
 {
 	col_max = c;
 	SetWidth(CalculateWidth(in_commands, width));

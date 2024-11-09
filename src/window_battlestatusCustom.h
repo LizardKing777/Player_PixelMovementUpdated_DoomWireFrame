@@ -31,7 +31,7 @@ public:
 	/**
 	 * Constructor.
 	 */
-	Window_BattleStatusCustom(int ix, int iy, int iwidth, int iheight, bool enemy = false);
+	Window_BattleStatusCustom(Scene* parent, int ix, int iy, int iwidth, int iheight, bool enemy = false);
 
 	/**
 	 * Renders the current status on the window.

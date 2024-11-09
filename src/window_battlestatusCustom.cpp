@@ -34,8 +34,8 @@
 #include "scene_battle.h"
 #include "game_strings.h"
 
-Window_BattleStatusCustom::Window_BattleStatusCustom(int ix, int iy, int iwidth, int iheight, bool enemy) :
-	Window_BattleStatus(ix, iy, iwidth, iheight, enemy) {
+Window_BattleStatusCustom::Window_BattleStatusCustom(Scene* parent, int ix, int iy, int iwidth, int iheight, bool enemy) :
+	Window_BattleStatus(parent, ix, iy, iwidth, iheight, enemy) {
 
 	SetBorderX(4);
 

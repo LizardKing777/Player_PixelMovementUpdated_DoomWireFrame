@@ -26,8 +26,8 @@
 #include "game_battle.h"
 #include "output.h"
 
-Window_Item_Custom::Window_Item_Custom(int ix, int iy, int iwidth, int iheight) :
-	Window_Item(ix, iy, iwidth, iheight) {
+Window_Item_Custom::Window_Item_Custom(Scene* parent, int ix, int iy, int iwidth, int iheight) :
+	Window_Item(parent, ix, iy, iwidth, iheight) {
 	column_max = 2;
 }
 

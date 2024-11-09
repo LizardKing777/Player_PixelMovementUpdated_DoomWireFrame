@@ -840,6 +840,8 @@ bool Game_Interpreter::ExecuteCommand(lcf::rpg::EventCommand const& com) {
 			return CommandShowStringPicSelectable(com);
 		case 3029:
 			return CommandManiacControlMessage(com);
+		case Cmd::EnableCombo:
+			return CommandEnableCombo(com);
 		default:
 			return true;
 	}
@@ -4158,6 +4160,10 @@ bool Game_Interpreter::CommandChangeClass(lcf::rpg::EventCommand const& com) { /
 	}
 
 	int class_id = com.parameters[2]; // 0: No class, 1+: Specific class
+
+	int mode = 1;
+	class_id = ValueOrVariable(mode, com.parameters[2]);
+
 	bool level1 = com.parameters[3] > 0;
 	int skill_mode = com.parameters[4]; // no change, replace, add
 	int param_mode = com.parameters[5]; // no change, halve, level 1, current level
@@ -5595,6 +5601,30 @@ bool Game_Interpreter::CommandShowStringPicSelectable(lcf::rpg::EventCommand con
 			if (Main_Data::game_windows->GetWindow(picIndex).window->GetActive()) {
 				Main_Data::game_windows->GetWindow(picIndex).window->Update();
 
+				// *** Mouse controls
+
+				Point mouse_pos = Input::GetMousePosition();
+				int x = Main_Data::game_pictures->GetPicture(picIndex).sprite->GetX() - Main_Data::game_windows->GetWindow(picIndex).window->GetWidth() / 2;
+				int y = Main_Data::game_pictures->GetPicture(picIndex).sprite->GetY() - Main_Data::game_windows->GetWindow(picIndex).window->GetHeight() / 2;
+
+				int index = Main_Data::game_windows->GetWindow(picIndex).window->CursorHitTest({ mouse_pos.x - x, mouse_pos.y - y });
+
+				if (index >= 0)
+					DisplayUi->ChangeCursor(1);
+				if (index >= 0 && index != Main_Data::game_windows->GetWindow(picIndex).window->GetIndex() && Input::MouseMoved()) {
+					// FIXME: Index changed callback?
+					Main_Data::game_windows->GetWindow(picIndex).window->SetIndex(index);
+
+					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Cursor));
+				}
+
+				if (index == -1 && Input::MouseMoved() && Main_Data::game_windows->GetWindow(picIndex).window->GetIndex() != -999) {
+					Main_Data::game_windows->GetWindow(picIndex).window->SetMouseOldIndex(Main_Data::game_windows->GetWindow(picIndex).window->GetIndex());
+					Main_Data::game_windows->GetWindow(picIndex).window->SetIndex(-999);
+				}
+
+				// ***
+
 				if (Input::IsTriggered(Input::CANCEL)) {
 					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Cancel));
 					int choice_result = Main_Data::game_windows->GetWindow(picIndex).window->GetPageItemMax();
@@ -5635,10 +5665,13 @@ bool Game_Interpreter::CommandShowStringPicSelectable(lcf::rpg::EventCommand con
 					return true;
 				}
 				if (Input::IsTriggered(Input::DECISION)) {
-					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
 					int choice_result = Main_Data::game_windows->GetWindow(picIndex).window->GetIndex();
 					//Output::Debug("CONFIRM {}", choice_result);
+					if (choice_result == -999) {
+						return false;
+					}
 
+					Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Decision));
 
 					int label_id = com.parameters[0];
 
@@ -5678,6 +5711,7 @@ bool Game_Interpreter::CommandShowStringPicSelectable(lcf::rpg::EventCommand con
 				//Output::Debug("!Active");
 				Main_Data::game_windows->GetWindow(picIndex).window->SetIndex(0);
 				Main_Data::game_windows->GetWindow(picIndex).window->SetActive(true);
+
 				auto text = Main_Data::game_windows->GetWindow(picIndex).data.texts;
 				int maxItem = 0;
 				for (const auto& text : text) {
@@ -5696,6 +5730,29 @@ bool Game_Interpreter::CommandShowStringPicSelectable(lcf::rpg::EventCommand con
 		else if (type == 2) {
 			Main_Data::game_windows->GetWindow(picIndex).window->Update();
 
+			// *** Mouse controls
+
+			Point mouse_pos = Input::GetMousePosition();
+			int x = Main_Data::game_pictures->GetPicture(picIndex).sprite->GetX() - Main_Data::game_windows->GetWindow(picIndex).window->GetWidth() / 2;
+			int y = Main_Data::game_pictures->GetPicture(picIndex).sprite->GetY() - Main_Data::game_windows->GetWindow(picIndex).window->GetHeight() / 2;
+
+			int index = Main_Data::game_windows->GetWindow(picIndex).window->CursorHitTest({ mouse_pos.x - x, mouse_pos.y - y });
+			if (index >= 0)
+				DisplayUi->ChangeCursor(1);
+			if (index >= 0 && index != Main_Data::game_windows->GetWindow(picIndex).window->GetIndex() && Input::MouseMoved()) {
+				// FIXME: Index changed callback?
+				Main_Data::game_windows->GetWindow(picIndex).window->SetIndex(index);
+
+				Main_Data::game_system->SePlay(Main_Data::game_system->GetSystemSE(Main_Data::game_system->SFX_Cursor));
+			}
+
+			if (index == -1 && Input::MouseMoved() && Main_Data::game_windows->GetWindow(picIndex).window->GetIndex() != -999) {
+				Main_Data::game_windows->GetWindow(picIndex).window->SetMouseOldIndex(Main_Data::game_windows->GetWindow(picIndex).window->GetIndex());
+				Main_Data::game_windows->GetWindow(picIndex).window->SetIndex(-999);
+			}
+
+			// ***
+
 			int variableID = ValueOrVariable(com.parameters[3], com.parameters[4]);
 			int value = Main_Data::game_windows->GetWindow(picIndex).window->GetIndex();
 			Main_Data::game_variables->Set(variableID, value);
@@ -5704,5 +5761,32 @@ bool Game_Interpreter::CommandShowStringPicSelectable(lcf::rpg::EventCommand con
 			Main_Data::game_windows->GetWindow(picIndex).window->SetActive(false);
 		}
 	}
+	return true;
+}
+
+bool Game_Interpreter::CommandEnableCombo(lcf::rpg::EventCommand const& com) {
+	if (!Player::IsRPG2k3Commands()) {
+		return true;
+	}
+
+
+	int actor_id = com.parameters[0];
+
+	if (!Main_Data::game_party->IsActorInParty(actor_id)) {
+		return true;
+	}
+
+	int command_id = com.parameters[1];
+	int multiple = com.parameters[2];
+
+	Game_Actor* actor = Main_Data::game_actors->GetActor(actor_id);
+
+	if (!actor) {
+		Output::Warning("EnableCombo: Invalid actor ID {}", actor_id);
+		return true;
+	}
+
+	actor->SetBattleCombo(command_id, multiple);
+
 	return true;
 }

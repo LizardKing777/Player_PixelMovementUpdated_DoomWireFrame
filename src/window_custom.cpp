@@ -26,8 +26,8 @@
 
 #include <scene_menu_custom.h>
 
-Window_Custom::Window_Custom(int ix, int iy, int iwidth, int iheight, std::string t) :
-	Window_Base(ix, iy, iwidth, iheight) {
+Window_Custom::Window_Custom(Scene* parent, int ix, int iy, int iwidth, int iheight, std::string t) :
+	Window_Base(parent, ix, iy, iwidth, iheight) {
 	name = t;
 
 	SetContents(Bitmap::Create(width - 16, height - 16));

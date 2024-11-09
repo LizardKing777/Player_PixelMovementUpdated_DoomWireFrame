@@ -28,7 +28,7 @@
  */
 class Window_MenuStatus_Custom : public Window_MenuStatus {
 public:
-	Window_MenuStatus_Custom(int ix, int iy, int iwidth, int iheight);
+	Window_MenuStatus_Custom(Scene* parent, int ix, int iy, int iwidth, int iheight);
 	void Refresh();
 	void UpdateCursorRect() override;
 

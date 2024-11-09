@@ -395,7 +395,7 @@ void Game_BattleAlgorithm::AlgorithmBase::Start() {
 		}
 
 		// Target Var
-		int size = std::distance(targets.begin(), targets.end());
+		int size = 1;
 		if (GetType() == Type::Normal) {
 
 			size = 1;
@@ -414,6 +414,11 @@ void Game_BattleAlgorithm::AlgorithmBase::Start() {
 				}
 			}
 
+		}
+		else if (GetType() == Type::Skill) {
+			// Fix for multiple targets
+			auto* skill = static_cast<Game_BattleAlgorithm::Skill*>(this);
+			size = std::distance(skill->GetOriginalTargets().begin(), skill->GetOriginalTargets().end());
 		}
 
 		if (size > 1) {

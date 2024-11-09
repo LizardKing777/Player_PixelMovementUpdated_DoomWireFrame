@@ -35,7 +35,7 @@ public:
 	 * @param width window width, if no width is passed
 	 *              the width is autocalculated.
 	 */
-	Window_Command_Custom(std::vector<std::string> commands, int width = -1, int c = 1);
+	Window_Command_Custom(Scene* parent, std::vector<std::string> commands, int width = -1, int c = 1);
 
 	/**
 	 * Replace all commands with a new command set.

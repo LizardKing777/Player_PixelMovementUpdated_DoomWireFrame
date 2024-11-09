@@ -86,7 +86,7 @@ void Scene_Menu_Custom::Start() {
 
 
 	// Gold Window
-	gold_window.reset(new Window_Gold(Player::menu_offset_x, (Player::screen_height - gold_window_height - Player::menu_offset_y), gold_window_width, gold_window_height));
+	gold_window.reset(new Window_Gold(this, Player::menu_offset_x, (Player::screen_height - gold_window_height - Player::menu_offset_y), gold_window_width, gold_window_height));
 
 	std::string win_name = "Gold";
 	auto it2 = CustomMenu::customWindows.find(win_name);
@@ -110,7 +110,7 @@ void Scene_Menu_Custom::Start() {
 
 		// Status Window
 		int h = CustomMenu::customWindows[win_name].itemHeight * (Main_Data::game_party->GetBattlerCount() + 1) / CustomMenu::customWindows[win_name].column;
-		menustatus_window.reset(new Window_MenuStatus_Custom(Player::menu_offset_x + menu_command_width, Player::menu_offset_y, CustomMenu::customWindows[win_name].w, h));
+		menustatus_window.reset(new Window_MenuStatus_Custom(this, Player::menu_offset_x + menu_command_width, Player::menu_offset_y, CustomMenu::customWindows[win_name].w, h));
 		menustatus_window->SetActive(false);
 
 		menustatus_window->SetX(CustomMenu::customWindows[win_name].x);
@@ -131,7 +131,7 @@ void Scene_Menu_Custom::Start() {
 	}
 	else {
 		// Status Window
-		menustatus_window.reset(new Window_MenuStatus_Custom(Player::menu_offset_x + menu_command_width, Player::menu_offset_y, (MENU_WIDTH - menu_command_width), MENU_HEIGHT));
+		menustatus_window.reset(new Window_MenuStatus_Custom(this, Player::menu_offset_x + menu_command_width, Player::menu_offset_y, (MENU_WIDTH - menu_command_width), MENU_HEIGHT));
 		menustatus_window->SetMenuItemHeight(58);
 		menustatus_window->SetActive(false);
 		menustatus_window->Refresh();
@@ -197,7 +197,7 @@ void Scene_Menu_Custom::CreateCustomWindows() {
 	for (auto p : CustomMenu::customWindows) {
 		if (!in_array(p.first, basic)) {
 			auto w = p.second;
-			Window_Custom* win = new Window_Custom(w.x, w.y, w.w, w.h, w.name);
+			Window_Custom* win = new Window_Custom(this, w.x, w.y, w.w, w.h, w.name);
 			win->SetVisible(!w.hide);
 			win->SetOpacity(w.opacity);
 			win->SetBackOpacity(w.opacity);
@@ -353,7 +353,7 @@ void Scene_Menu_Custom::CreateCommandWindow() {
 	auto it2 = CustomMenu::customWindows.find(win_name);
 
 	if (it2 != CustomMenu::customWindows.end()) {
-		command_window.reset(new Window_Command_Custom(options, CustomMenu::customWindows[win_name].w, CustomMenu::customWindows[win_name].column));
+		command_window.reset(new Window_Command_Custom(this, options, CustomMenu::customWindows[win_name].w, CustomMenu::customWindows[win_name].column));
 		command_window->SetIndex(menu_index);
 
 		command_window->SetX(CustomMenu::customWindows[win_name].x);
@@ -363,7 +363,7 @@ void Scene_Menu_Custom::CreateCommandWindow() {
 		command_window->SetVisible(!CustomMenu::customWindows[win_name].hide);
 	}
 	else {
-		command_window.reset(new Window_Command(options, menu_command_width));
+		command_window.reset(new Window_Command(this, options, menu_command_width));
 		command_window->SetX(Player::menu_offset_x);
 		command_window->SetY(Player::menu_offset_y);
 		command_window->SetIndex(menu_index);
