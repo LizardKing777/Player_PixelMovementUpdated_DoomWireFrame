@@ -882,6 +882,7 @@ public:
 	static constexpr int GetDxFromDirection(int dir);
 	static constexpr int GetDyFromDirection(int dir);
 
+
 	struct SearchNode {  // Used by Game_Interpreter_Map::CommandSearchPath.
 		SearchNode(int a, int b, int c, int d) {
 			x = a;
@@ -923,6 +924,10 @@ public:
 		int destX,
 		int destY
 	);  // Internal generic path finder function.
+
+	/** Wait time for DOOM mode */
+	int doomWait = 0;
+
 
 protected:
 	explicit Game_Character(Type type, lcf::rpg::SaveMapEventBase* d);

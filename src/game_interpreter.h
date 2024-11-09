@@ -289,6 +289,7 @@ protected:
 	bool CommandManiacSetGameOption(lcf::rpg::EventCommand const& com);
 	bool CommandManiacControlStrings(lcf::rpg::EventCommand const& com);
 	bool CommandManiacCallCommand(lcf::rpg::EventCommand const& com);
+
 	bool SetBattlerPosition(lcf::rpg::EventCommand const& com);
 	bool CommandSetCustomIsSkillUsable(lcf::rpg::EventCommand const& com);
 	bool CommandGetSkillMPCost(lcf::rpg::EventCommand const& com);
@@ -300,6 +301,11 @@ protected:
 	void tokenize(std::string const& str, const char delim, std::vector<std::string>& out);
 	void tokenizeRegex(std::string const& str, const char delim, std::vector<std::string>& out);
 
+
+	bool Command3DPicture(lcf::rpg::EventCommand const& com);
+	bool Command3DPictureRotate(lcf::rpg::EventCommand const& com);
+	bool CommandGet3DPictureRotate(lcf::rpg::EventCommand const& com);
+	bool CommandSetDoomMap(lcf::rpg::EventCommand const& com);
 
 
 	int DecodeInt(lcf::DBArray<int32_t>::const_iterator& it);

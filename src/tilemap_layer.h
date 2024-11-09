@@ -98,6 +98,9 @@ public:
 
 	void SetTone(Tone tone);
 
+	BitmapRef DrawTileDoom(int x, int y, bool allow_fast_blit = true);
+	int GetTileDoom(int map_x, int map_y, int layer);
+
 private:
 	BitmapRef chipset;
 	BitmapRef chipset_effect;

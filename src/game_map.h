@@ -40,6 +40,7 @@
 #include <lcf/rpg/savecommonevent.h>
 #include "async_op.h"
 #include <player.h>
+#include "tilemap_layer.h"
 
 class FileRequestAsync;
 struct BattleArgs;
@@ -698,6 +699,10 @@ namespace Game_Map {
 
 
 	int ChangeTile(int layer, int x, int y, int new_id);
+
+	int GetTileID(int x, int y, int layer);
+	TilemapLayer* GetTilemap(int i);
+
 
 	namespace Parallax {
 		struct Params {

@@ -541,3 +541,26 @@ void Scene_Map::Reset_MessageWindow(int x, int y, int w, int h) {
 
 	Game_Message::SetWindow(message_window.get());
 }
+
+BitmapRef Scene_Map::GetEventSprite(int i) {
+	auto s = spriteset->GetEventSprite(i);
+	return s;
+}
+
+
+BitmapRef Scene_Map::GetChipset() {
+	return spriteset->GetChipset();
+}
+
+BitmapRef Scene_Map::GetTile(int x, int y, int layer) {
+	return spriteset->GetTile(x, y, layer);
+}
+
+int Scene_Map::GetTileID(int x, int y, int layer) {
+	return spriteset->GetTileID(x, y, layer);
+}
+
+TilemapLayer* Scene_Map::GetTilemap(int i) {
+	return spriteset->GetTilemap(i);
+
+}

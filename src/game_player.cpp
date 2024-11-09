@@ -267,6 +267,12 @@ bool Game_Player::UpdateAirship() {
 }
 
 void Game_Player::UpdateNextMovementAction() {
+	canMove = false;
+
+	if (doomWait > 0) {
+		doomWait--;
+	}
+
 	if (UpdateAirship()) {
 		return;
 	}
@@ -312,7 +318,7 @@ void Game_Player::UpdateNextMovementAction() {
 	if (Game_Map::IsAnyEventStarting()) {
 		return;
 	}
-
+	canMove = true;
 	int move_dir = -1;
 	switch (Input::dir4) {
 		case 2:
@@ -379,14 +385,86 @@ void Game_Player::UpdateNextMovementAction() {
 		}
 	}
 
-	if (move_dir >= 0) {
+
+	if (move_dir >= 0 && ((doomMoveType <= 0 || doomMoveType == 2) && doomWait <= 0)) {
+
 		SetThrough((Player::debug_flag && Input::IsPressed(Input::DEBUG_THROUGH)) || data()->move_route_through);
-		Move(move_dir);
-		ResetThrough();
-		if (IsStopping()) {
-			int front_x = Game_Map::XwithDirection(GetX(), GetDirection());
-			int front_y = Game_Map::YwithDirection(GetY(), GetDirection());
-			CheckEventTriggerThere({lcf::rpg::EventPage::Trigger_touched, lcf::rpg::EventPage::Trigger_collision}, front_x, front_y, false);
+		if (doomMoveType == 0) {
+
+			static const int turn_speed[] = { 64, 32, 24, 16, 12, 8 };
+			static const int move_speed[] = { 16, 8, 6, 4, 3, 2 };
+
+			if (move_dir == Left) {
+				if (Input::IsPressed(Input::SHIFT)) {
+					int d = GetDirection();
+					Turn90DegreeLeft();
+					Move(GetDirection());
+					doomWait = move_speed[GetMoveSpeed() - 1];
+					SetDirection(d);
+				}
+				else {
+					Turn90DegreeLeft();
+					SetFacing(GetDirection());
+					doomWait = turn_speed[GetMoveSpeed() - 1];//1 << (1 + GetMoveSpeed());
+				}
+			}
+			else if (move_dir == Right) {
+
+				if (Input::IsPressed(Input::SHIFT)) {
+					int d = GetDirection();
+					Turn90DegreeRight();
+					Move(GetDirection());
+					doomWait = move_speed[GetMoveSpeed() - 1];
+					SetDirection(d);
+				}
+				else {
+					Turn90DegreeRight();
+					SetFacing(GetDirection());
+					doomWait = turn_speed[GetMoveSpeed() - 1];
+				}
+
+			}
+			else if (move_dir == Up) {
+
+				Move(GetDirection());
+				doomWait = move_speed[GetMoveSpeed() - 1];
+
+			}
+			else if (move_dir == Down) {
+				if (Input::IsPressed(Input::SHIFT)) {
+					int d = GetDirection();
+					Turn180Degree();
+					Move(GetDirection());
+					doomWait = move_speed[GetMoveSpeed() - 1];
+					SetDirection(d);
+				}
+				else {
+					Turn180Degree();
+					SetFacing(GetDirection());
+					doomWait = turn_speed[GetMoveSpeed() - 1];
+				}
+
+			}
+
+			ResetThrough();
+			if (IsStopping() && move_dir != Left && move_dir != Right && move_dir != Down) {
+				int front_x = Game_Map::XwithDirection(GetX(), GetDirection());
+				int front_y = Game_Map::YwithDirection(GetY(), GetDirection());
+				CheckEventTriggerThere({ lcf::rpg::EventPage::Trigger_touched, lcf::rpg::EventPage::Trigger_collision }, front_x, front_y, false);
+			}
+		}
+		else {
+			Move(move_dir);
+			if (doomMoveType == 2) {
+				static const int move_speed[] = { 12, 10, 4, 3, 2, 1 };
+				doomWait = move_speed[GetMoveSpeed() - 1];
+			}
+			ResetThrough();
+			if (IsStopping()) {
+				int front_x = Game_Map::XwithDirection(GetX(), GetDirection());
+				int front_y = Game_Map::YwithDirection(GetY(), GetDirection());
+				CheckEventTriggerThere({ lcf::rpg::EventPage::Trigger_touched, lcf::rpg::EventPage::Trigger_collision }, front_x, front_y, false);
+			}
 		}
 
 		// Reset targetMXY if player use keyboard

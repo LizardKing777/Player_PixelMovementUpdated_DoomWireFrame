@@ -303,6 +303,9 @@ void Game_Character::UpdateMoveRoute(int32_t& current_index, const lcf::rpg::Mov
 			}
 			Move(GetDirection());
 
+			static const int move_speed[] = { 16, 8, 6, 4, 3, 2 };
+			doomWait = move_speed[GetMoveSpeed() - 1];
+
 			if (IsStopping()) {
 				// Move failed
 				if (current_route.skippable) {
@@ -359,6 +362,9 @@ void Game_Character::UpdateMoveRoute(int32_t& current_index, const lcf::rpg::Mov
 			SetFacing(GetDirection());
 			SetMaxStopCountForTurn();
 			SetStopCount(0);
+
+			static const int turn_speed[] = { 64, 32, 24, 16, 12, 8 };
+			doomWait = turn_speed[GetMoveSpeed() - 1];
 		} else {
 			switch (cmd) {
 				case Code::wait:

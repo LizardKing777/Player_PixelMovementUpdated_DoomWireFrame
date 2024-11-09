@@ -151,15 +151,22 @@ public:
 	bool IsDatabaseCompatibleWithSave(int database_save_count) const;
 
 	void UpdateSaveCounts(int db_save_count, int map_save_count);
-private:
+
+	bool canMove = false;
+	int doomMoveType = 0;
+
+	// Move things here
+	bool CheckActionEvent();
 	using TriggerSet = lcf::FlagSet<lcf::rpg::EventPage::Trigger>;
+	bool CheckEventTriggerHere(TriggerSet triggers, bool triggered_by_decision_key);
+	bool CheckEventTriggerThere(TriggerSet triggers, int x, int y, bool triggered_by_decision_key);
+
+private:
 
 	void UpdateScroll(int amount, bool was_jumping);
 	void UpdatePan();
 	void UpdateEncounterSteps();
-	bool CheckActionEvent();
-	bool CheckEventTriggerHere(TriggerSet triggers, bool triggered_by_decision_key);
-	bool CheckEventTriggerThere(TriggerSet triggers, int x, int y, bool triggered_by_decision_key);
+
 	bool GetOnVehicle();
 	bool GetOffVehicle();
 	bool UpdateAirship();
