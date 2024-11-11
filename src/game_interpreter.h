@@ -182,6 +182,15 @@ protected:
 	 * @param id actor ID (mode = 1) or variable ID (mode = 2).
 	 */
 	static std::vector<Game_Actor*> GetActors(int mode, int id);
+	static int ValueOrVariable(int mode, int val);
+	static int ValueOrVariableBitfield(int mode, int shift, int val);
+	// Range checked, conditional version (slower) of ValueOrVariableBitfield
+	static int ValueOrVariableBitfield(lcf::rpg::EventCommand const& com, int mode_idx, int shift, int val_idx);
+	static StringView CommandStringOrVariable(lcf::rpg::EventCommand const& com, int mode_idx, int val_idx);
+	static StringView CommandStringOrVariableBitfield(lcf::rpg::EventCommand const& com, int mode_idx, int shift, int val_idx);
+
+
+
 
 	/**
 	 * When current frame finishes executing we pop the stack
@@ -300,6 +309,16 @@ protected:
 	bool CommandEasyRpgSetInterpreterFlag(lcf::rpg::EventCommand const& com);
 	bool CommandEasyRpgCloneMapEvent(lcf::rpg::EventCommand const& com);
 	bool CommandEasyRpgDestroyMapEvent(lcf::rpg::EventCommand const& com);
+	bool Command3DPicture(lcf::rpg::EventCommand const& com);
+	bool Command3DPictureRotate(lcf::rpg::EventCommand const& com);
+	bool CommandGet3DPictureRotate(lcf::rpg::EventCommand const& com);
+	bool CommandSetDoomMap(lcf::rpg::EventCommand const& com);
+
+
+	int DecodeInt(lcf::DBArray<int32_t>::const_iterator& it);
+	const std::string DecodeString(lcf::DBArray<int32_t>::const_iterator& it);
+	lcf::rpg::MoveCommand DecodeMove(lcf::DBArray<int32_t>::const_iterator& it);
+
 
 	void SetSubcommandIndex(int indent, int idx);
 	uint8_t& ReserveSubcommandIndex(int indent);
@@ -340,6 +359,8 @@ protected:
 		void toSave(lcf::rpg::SaveEventExecState& save) const;
 	};
 
+	bool CheckOperator(int val, int val2, int op) const;
+	bool ManiacCheckContinueLoop(int val, int val2, int type, int op) const;
 	int ManiacBitmask(int value, int mask) const;
 
 	lcf::rpg::SaveEventExecState _state;
