@@ -78,6 +78,7 @@ add_library(${PROJECT_NAME} OBJECT
 	src/color.h
 	src/compiler.h
 	src/config_param.h
+	src/cute_c2.h
 	src/decoder_fluidsynth.cpp
 	src/decoder_fluidsynth.h
 	src/decoder_libsndfile.cpp
@@ -351,6 +352,8 @@ add_library(${PROJECT_NAME} OBJECT
 	src/spriteset_battle.h
 	src/spriteset_map.cpp
 	src/spriteset_map.h
+	src/spriteset_doom.cpp
+	src/spriteset_doom.h
 	src/sprite_timer.cpp
 	src/sprite_timer.h
 	src/state.cpp
